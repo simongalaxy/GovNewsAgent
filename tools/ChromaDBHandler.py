@@ -1,11 +1,13 @@
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_ollama.embeddings import OllamaEmbeddings
-from langchain_classic.retrievers import EnsembleRetriever, BM25Retriever
+from langchain_classic.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
 
 from tools.logger import Logger 
 
 import os
+from typing import Optional, List
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -19,34 +21,34 @@ class ChromaDBHandler:
             persist_directory=os.getenv("chromadb_path")
         )
         self.retriever = self.vectorstore.as_retriever()
-        self.keyword_retriever = BM25Retriever()
-        self.ensemble_retriever = EnsembleRetriever(
-            retrievers=[self.retriever, self.keyword_retriever], 
-            weights=[0.5, 0.5]
-            )
-        
+        self.bm25_retriever: Optional[BM25Retriever] = None  # Initialize as None, will be set when documents are added
+        self.hybrid_retriever: Optional[EnsembleRetriever] = None  # Initialize as None, will be set when
         
         self.logger.info("ChromaDBHandler initialized with OllamaEmbeddings and Chroma vectorstore.")
         
     
-    def add_documents(self, documents: list[Document]) -> None:
-        count = 0
-        for i, doc in enumerate(documents):
-            # existing_docs = self.vectorstore.get(where={"news_id": doc.metadata["news_id"]})
-            # self.logger.info(f"Checking for existing documents with news_id: {doc.metadata['news_id']}. Found {len(existing_docs)} existing documents.")
-            # if not existing_docs[]:
+    def add_documents(self, documents: List[Document]) -> None:
+        """
+        Add documents to Chroma and prepare BM25 retriever for hybrid search.
+        """
+        for i, doc in enumerate(documents, start=1):
             self.vectorstore.add_documents([doc])
-            count += 1
-            self.logger.info(f"Added Document with id: {doc.id} to ChromaDB.")
+            self.logger.info(f"added document {i}/{len(documents)} with id: {doc.id} and title: {doc.metadata['title']}")    
         
-        self.logger.info(f"Total new documents added to ChromaDB: {count}")
+        # create BM25 retriever and ensemble retriever after adding documents.
+        self.bm25_retriever = BM25Retriever.from_documents(documents)
         
+        # create ensemble retriever with equal weights for both retrievers.
+        self.ensemble_retriever = EnsembleRetriever(retrievers=[self.retriever, self.bm25_retriever], weights=[0.5, 0.5])
+           
         return
     
     
-    def query_hybrid_search(self, query: str, top_k: int = 20) -> list[Document]:
-        self.logger.info(f"Performing hybrid search for query: '{query}' with top_k={top_k}")
-        results = self.ensemble_retriever.get_relevant_documents(query, top_k=top_k)
-        self.logger.info(f"Hybrid search retrieved {len(results)} documents.")
+    def hybrid_search(self, query: str) -> List[Document]:
+        """
+        Perform hybrid search (Ollama vector + BM25) and return relevant documents.
+        """
+        if not self.ensemble_retriever:
+            self.logger.warning("Ensemble retriever not initialized. Please add documents before performing hybrid search.")
         
-        return results
+        return self.ensemble_retriever.invoke(query)
