@@ -60,11 +60,21 @@ class NewsCrawler:
                 config=config,
                 dispatcher=self.dispatcher
             )
-        
+    
         return results
  
 
     def fetch_news_by_dates(self, startDate: str, endDate: str) -> List[CrawlResult]:
+        """To fetch news items from the government press release website by specified date range, and return the crawl results as a list of CrawlResult objects.
+
+        Args:
+            startDate (str): in the format of "YYYYMMDD", e.g. "20260405"
+            endDate (str):  in the format of "YYYYMMDD", e.g. "20260405"
+
+        Returns:
+            List[CrawlResult]: in the format of a list of CrawlResult objects, where each object contains the metadata and markdown content of a news item. The metadata includes the title, date, and url of the news item.
+        """
+        
         urls = generate_date_urls(startDate=startDate, endDate=endDate, logger=self.logger)
     
         # crawl page links of press release.
@@ -74,6 +84,14 @@ class NewsCrawler:
         
         # get the data dictionaries from press releases and save results to chromadb.
         results = asyncio.run(self._crawl_pages(urls=news_links, config=self.crawl_config_newsPage))
+        
+        # log the crawling results for debugging and verification.
+        self.logger.info(f"Crawling completed. Total news items retrieved: {len(results)}")
+        for idx, result in enumerate(results, start=1):
+            self.logger.info(f"News Item {idx}:")
+            self.logger.info(f"Title: {result.metadata["title"]}") 
+            self.logger.info(f"Content: \n%s", result.markdown)
+            self.logger.info("-" * 50)
         
         return results
     

@@ -6,6 +6,8 @@ from tools.DataProcessor import date_to_unix, transform_text_to_time
 from tools.logger import Logger
 from typing import List
 
+from pprint import pformat
+
 class DocumentGenerator:
     def __init__(self, logger: Logger):
         self.logger = logger
@@ -28,7 +30,16 @@ class DocumentGenerator:
         return all_chunks
     
     
-    def _generate_documents(self, crawl_results: List[CrawlResult]) -> List[Document]:
+    def generate_documents(self, crawl_results: List[CrawlResult]) -> List[Document]:
+        """Generating documents from crawlresults.
+
+        Args:
+            crawl_results (List[CrawlResult]): a list of CrawlResults, where each CrawlResult contains the metadata and markdown content of a news item. The metadata includes the title, date, and url of the news item.
+
+        Returns:
+            List[Document]: List of Documents, where each Document corresponds to a chunk of a news item, and contains the metadata (news_id, title, published_date, published_time, url, chunk_index, total_chunks) and the page_content (the text content of the chunk).
+        """
+        
         documents = []
         for result in crawl_results:
             # get the information from result.
@@ -58,10 +69,12 @@ class DocumentGenerator:
                     }
                 )
                 self.logger.info(f"Created Document for chunk {i} of news item - {title}")
-                self.logger.info(f"Metadata for chunk {i}: {doc.metadata}")
+                self.logger.info(f"Metadata for chunk {i}: \n%s", pformat(doc.metadata, indent=4))
                 self.logger.info(f"Chunk content: {chunk}")
                 self.logger.info("-" * 50)
                 documents.append(doc)
+        
+        self.logger.info(f"Document generation completed. Total documents created: {len(documents)}")
         
         return documents
         

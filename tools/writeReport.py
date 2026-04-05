@@ -5,6 +5,8 @@ from datetime import datetime
 
 
 def write_report(markdown: str) -> str:
+    """Write the generated markdown report to a text file with a timestamped filename, and return the filename."""
+    
     current_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     # generate filename by daily press release url.
     filename = f"Media_Summary_Report-{current_timestamp}.md"
