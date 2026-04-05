@@ -3,6 +3,7 @@ from tools.logger import Logger
 from tools.DocumentGenerator import DocumentGenerator
 from tools.ChromaDBHandler import ChromaDBHandler
 from tools.SummaryGenerator import SummaryGenerator
+from tools.writeReport import write_report
 
 from pprint import pformat
 
@@ -23,15 +24,15 @@ def main():
     # documents = document_generator.generate_documents(crawl_results=results)
     
     # db_handler.add_documents(documents=documents)
-    query="News relating to Center for Food Safety on 31 March, 2026"
+    query="all the news on 2 April 2026"
     
     query_results = db_handler.hybrid_search(query=query)
     
     summary = summary_generator.summarize_content(
         query=query, 
-        query_results=query_results
+        contents=query_results
     )
-
+    write_report(markdown=summary)
 
 if __name__ == "__main__":
     main()

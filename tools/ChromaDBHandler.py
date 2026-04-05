@@ -73,6 +73,7 @@ class ChromaDBHandler:
             where={"news_id": {"$in": news_ids}}
             )
         self.logger.info(f"Total documents retrieved from vectorstore for filtering: {len(filtered_docs['documents'])}")
+        self.logger.info(f"dataytpe of filtered_docs['documents']: {type(filtered_docs["documents"])}")
         self.logger.info(f"filtered_docs: \n%s", pformat(filtered_docs["documents"]))
         
         return filtered_docs["documents"]

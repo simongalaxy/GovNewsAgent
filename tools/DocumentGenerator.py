@@ -48,7 +48,7 @@ class DocumentGenerator:
             news_id = url.split("/")[-1].split(".")[0]  # Extract news_id from URL
             title = result.metadata["title"]
             date_str = content.split("\n")[-4].split(", ", 1)[-1].strip()  # Extract date string from markdown
-            time_str = content.split("\n")[-3].split(" ")[-2].strip()  # Extract time string from markdown
+            # time_str = content.split("\n")[-3].split(" ")[-2].strip()  # Extract time string from markdown
             chunks = self._split_text(content=content)
             
             self.logger.info(f"Processing news item: {title}")
@@ -62,7 +62,7 @@ class DocumentGenerator:
                         "news_id": news_id,
                         "title": title,
                         "published_date": date_to_unix(date_str),
-                        "published_time": transform_text_to_time(time_str, self.logger),
+                        # "published_time": transform_text_to_time(time_str, self.logger),
                         "url": url,
                         "chunk_index": i,
                         "total_chunks": len(chunks)
