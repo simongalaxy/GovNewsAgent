@@ -9,6 +9,7 @@ wheels/
 logs/
 chroma_news_db/
 reports/
+old_code/
 
 # Virtual environments
 .venv

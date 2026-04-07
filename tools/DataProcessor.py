@@ -1,67 +1,52 @@
-from datetime import datetime, timedelta, date, time
+from langchain_ollama import OllamaEmbeddings
+from datetime import datetime
+from pprint import pformat
 from crawl4ai import CrawlResult
 from typing import List
-import re
+import numpy as np
 
+import os
+from dotenv import load_dotenv
+from sympy import content
+load_dotenv()
 
 from tools.logger import Logger
 
-# data processing functions.
-def generate_date_range(startDate: str, endDate: str, logger: Logger) -> list[str]:
-    start_date = datetime.strptime(startDate, "%Y%m%d")
-    end_date = datetime.strptime(endDate, "%Y%m%d")
+
+
+class DataProcessor:
+    def __init__(self, logger: Logger):
+        self.logger = logger
+        self.model = os.getenv("ollama_embedding_model")
+        self.embeddings = OllamaEmbeddings(model=self.model)
+
+    def _embed_text(self, text: str) -> List[float]:
+        return self.embeddings.embed_query(text)
     
-    dates = []
-    current = start_date
-    while current <= end_date:
-        dates.append(current.strftime("%Y%m%d"))
-        current += timedelta(days=1)
     
-    logger.info(f"Generated date range from {startDate} to {endDate}: {dates}")
-    
-    return dates
+    def _to_postgres_date(self, date_str: str) -> str:
+        # Parse the natural-language date
+        dt = datetime.strptime(date_str, "%B %d, %Y")
+        # Format into PostgreSQL date format
+        return dt.strftime("%Y-%m-%d")
 
 
-def generate_date_urls(startDate: str, endDate: str, logger: Logger) -> list[str]:
-    dates = generate_date_range(startDate=startDate, endDate=endDate, logger=logger)
-    urls = [f"https://www.info.gov.hk/gia/general/{date[:-2]}/{date[-2:]}.htm" for date in dates]
-    logger.info(f"Generated {len(urls)} date URLs: {urls}")
-    
-    return urls
-
-
-def consolidate_news_urls(results: List[CrawlResult], logger: Logger) -> list[str]:
-    news_links = []
-    for result in results:
-        links = result.links.get("internal", [])
-        for link in links:
-            if re.search(pattern=r"P.*\.htm", string=link["href"]):
-                    news_links.append(link["href"])
-    
-    logger.info(f"Extracted {len(news_links)} news URLs from crawl results.")
-    logger.info(f"Consolidated news URLs: {news_links}")
-    
-    return news_links
-
-
-def date_to_unix(date_str: str) -> int: 
-    dt = datetime.strptime(date_str, "%B %d, %Y") 
-    
-    return int(dt.timestamp())
-
-
-def transform_text_to_date(date_str: str, logger: Logger) -> str:
-    try:
-        date_obj = datetime.strptime(date_str, "%B %d, %Y")
-        return date_obj.strftime("%Y-%m-%d")
-    except ValueError as e:
-        logger.error(f"Date conversion error for '{date_str}': {e}")
-        return date_str
-
-def transform_text_to_time(time_str: str, logger: Logger) -> str:
-    try:
-        time_obj = datetime.strptime(time_str, "%H:%M")
-        return time_obj.strftime("%H:%M:%S")
-    except ValueError as e:
-        logger.error(f"Time conversion error for '{time_str}': {e}")
-        return time_str
+    def get_info_from_result(self, result: CrawlResult) -> dict:
+        url = result.url
+        content = result.markdown
+        news_id = url.split("/")[-1].split(".")[0]  # Extract news_id from URL
+        title = result.metadata["title"]
+        date_str = content.split("\n")[-4].split(", ", 1)[-1].strip()
+        
+        data = {
+            "news_id": news_id,
+            "published_date": self._to_postgres_date(date_str),
+            "title": title,
+            "content": content,
+            "url": url,
+            "embeddings": self._embed_text(text=content)  
+        }
+        
+        # self.logger.info(f"Extracted info from result: /n%s", pformat(data, indent=2))
+        
+        return data   
