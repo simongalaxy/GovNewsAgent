@@ -41,8 +41,11 @@ class NewsCrawler:
     
     # data processing functions.
     def _generate_date_range(self, startDate: str, endDate: str) -> list[str]:
-        start_date = datetime.strptime(startDate, "%Y%m%d")
-        end_date = datetime.strptime(endDate, "%Y%m%d")
+        # transform the dates from string to datetime format.
+        start_date = datetime.strptime(startDate, "%d %B %Y")
+        end_date = datetime.strptime(endDate, "%d %B %Y")
+        
+        self.logger.info(f"Start date: {start_date}, End Date: {end_date}")
         
         dates = []
         current = start_date

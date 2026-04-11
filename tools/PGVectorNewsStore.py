@@ -33,7 +33,7 @@ class PGVectorNewsStore:
                 CREATE TABLE IF NOT EXISTS news (
                     id SERIAL PRIMARY KEY,
                     news_id TEXT UNIQUE NOT NULL,
-                    published_date DATE,¬
+                    published_date DATE,
                     title TEXT,
                     content TEXT,
                     url TEXT,
@@ -66,7 +66,7 @@ class PGVectorNewsStore:
                     url = EXCLUDED.url,
                     embedding = EXCLUDED.embedding,
                     tsv = EXCLUDED.tsv;
-            """, (item.news_id, item.published_date, item.title, item.content, item.url, item.content))
+            """, (item.news_id, item.published_date, item.title, item.content, item.url, item.embeddings, item.content))
             conn.commit()
 
     # ---------------------------------------------------------
@@ -96,14 +96,12 @@ class PGVectorNewsStore:
                     ) AS hybrid_score
                 FROM News
                 WHERE published_date BETWEEN %s AND %s
-                ORDER BY hybrid_score DESC
-                LIMIT %s;
+                ORDER BY hybrid_score DESC;
             """, (
-                query_text,
-                keyword,
-                start_date,
-                end_date,
-                self.limit
+                parsed_query.query_text,
+                parsed_query.keywords,
+                parsed_query.start_date,
+                parsed_query.end_date
             )).fetchall()
 
             return rows

@@ -2,7 +2,7 @@ from langchain_ollama.chat_models import ChatOllama
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 
-from logger import Logger
+from tools.logger import Logger
 from tools.States import ParsedQuery
 
 from devtools import debug
