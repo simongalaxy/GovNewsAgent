@@ -1,9 +1,9 @@
 from langchain_ollama import OllamaEmbeddings
 from datetime import datetime
-from pprint import pformat
 from crawl4ai import CrawlResult
 from typing import List
 import numpy as np
+from devtools import debug
 
 import os
 from dotenv import load_dotenv
@@ -11,7 +11,7 @@ from sympy import content
 load_dotenv()
 
 from tools.logger import Logger
-
+from tools.States import NewsItem
 
 
 class DataProcessor:
@@ -31,22 +31,22 @@ class DataProcessor:
         return dt.strftime("%Y-%m-%d")
 
 
-    def get_info_from_result(self, result: CrawlResult) -> dict:
+    def get_info_from_result(self, result: CrawlResult) -> NewsItem:
         url = result.url
         content = result.markdown
         news_id = url.split("/")[-1].split(".")[0]  # Extract news_id from URL
         title = result.metadata["title"]
         date_str = content.split("\n")[-4].split(", ", 1)[-1].strip()
         
-        data = {
-            "news_id": news_id,
-            "published_date": self._to_postgres_date(date_str),
-            "title": title,
-            "content": content,
-            "url": url,
-            "embeddings": self._embed_text(text=content)  
-        }
+        item = NewsItem(
+            news_id=news_id,
+            published_date= self._to_postgres_date(date_str=date_str),
+            title=title,
+            content=content,
+            url=url,
+            embeddings=self._embed_text(text=content)
+        )
         
-        # self.logger.info(f"Extracted info from result: /n%s", pformat(data, indent=2))
+        self.logger.info(f"Extracted info from result: /n%s", debug(item))
         
-        return data   
+        return item

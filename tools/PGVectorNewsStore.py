@@ -1,4 +1,5 @@
 import psycopg
+from pgvector.psycopg import register_vector
 from psycopg.rows import dict_row
 from typing import List, Tuple
 import numpy as np
@@ -9,6 +10,7 @@ from sympy import content
 load_dotenv()
 
 from tools.logger import Logger
+from tools.States import NewsItem, ParsedQuery
 
 
 class PGVectorNewsStore:
@@ -20,69 +22,57 @@ class PGVectorNewsStore:
         self.port = os.getenv("port")
         self.db_name = os.getenv("db_name")
         self.conn_str = f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.db_name}"
-        self.embedding_dim = 1536
+        self.embedding_dim = 1024
+        self.limit = 30
         
 
         with psycopg.connect(self.conn_str) as conn:
+            register_vector(conn)
             conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-            conn.execute("""
+            conn.execute(f"""
                 CREATE TABLE IF NOT EXISTS news (
                     id SERIAL PRIMARY KEY,
-                    news_id TEXT UNIQUE,
-                    published_date DATE,
+                    news_id TEXT UNIQUE NOT NULL,
+                    published_date DATE,¬
                     title TEXT,
                     content TEXT,
                     url TEXT,
-                    embedding VECTOR(%s),
+                    embedding VECTOR({self.embedding_dim}),
                     tsv TSVECTOR
                 );
-            """, (self.embedding_dim,))
+            """) # type: ignore
 
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_news_date ON news (published_date);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_news_tsv ON news USING GIN(tsv);")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_news_embedding ON news USING ivfflat (embedding vector_l2_ops);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_news_embedding ON news USING ivfflat (embedding vector_l2_ops) WITH (lists = 100);")
             conn.commit()
 
     # ---------------------------------------------------------
     # Insert or update a news article
     # ---------------------------------------------------------
-    def upsert_news(
-        self,
-        news_id: str,
-        published_date: str,
-        title: str,
-        content: str,
-        url: str,
-        embedding: List[float]
-    ):
+    def upsert_news(self, item: NewsItem):
         
         """Insert a news article into the database, or update it if it already exists."""
         
         with psycopg.connect(self.conn_str) as conn:
+            register_vector(conn)
             conn.execute("""
                 INSERT INTO news (news_id, published_date, title, content, url, embedding, tsv)
                 VALUES (%s, %s, %s, %s, %s, %s, to_tsvector('english', %s))
-                ON CONFLICT (news_id)
-                DO UPDATE SET
+                ON CONFLICT (news_id) DO UPDATE SET
                     published_date = EXCLUDED.published_date,
                     title = EXCLUDED.title,
                     content = EXCLUDED.content,
                     url = EXCLUDED.url,
                     embedding = EXCLUDED.embedding,
                     tsv = EXCLUDED.tsv;
-            """, (news_id, published_date, title, content, url, embedding, content))
+            """, (item.news_id, item.published_date, item.title, item.content, item.url, item.content))
             conn.commit()
 
     # ---------------------------------------------------------
     # Hybrid search: keyword + semantic + date filter
     # ---------------------------------------------------------
-    def hybrid_search(
-        self,
-        query_text: str,
-        query_embedding: List[float],
-        start_date: str,
-        end_date: str,
-        limit: int = 30
-    ) -> List[dict]:
+    def hybrid_search(self, parsed_query: ParsedQuery) -> List[dict]:
 
         """Perform a hybrid search combining keyword relevance, vector similarity, and date filtering."""
         
@@ -110,12 +100,10 @@ class PGVectorNewsStore:
                 LIMIT %s;
             """, (
                 query_text,
-                query_embedding,
-                query_text,
-                query_embedding,
+                keyword,
                 start_date,
                 end_date,
-                limit
+                self.limit
             )).fetchall()
 
             return rows
