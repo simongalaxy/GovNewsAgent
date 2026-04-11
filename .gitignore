@@ -5,7 +5,6 @@ build/
 dist/
 wheels/
 *.egg-info
-.env
 logs/
 chroma_news_db/
 reports/
