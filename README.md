@@ -125,7 +125,7 @@ ollama_embedding_model=bge-m3:latest
 
 ## Usage
 uv run main.py
-type the keyword(e.g. AI) for searching relevant jobs.
+Enter the query to the Gov News or type 'q' for exit:
 
 ---
 
