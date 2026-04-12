@@ -5,7 +5,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from tools.logger import Logger
 from tools.States import ParsedQuery
 
-from devtools import debug
+from pprint import pformat
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -28,15 +28,12 @@ class QueryParser:
         self.chain = self.prompt | self.llm | self.parser
         self.logger.info("QueryParser initialized")
     
+    
     def parse_query(self, query: str) -> ParsedQuery:
         parsed_query = self.chain.invoke({"query": query})
-        self.logger.info(f"Parsed Query: \n%s", debug(parsed_query))
+        self.logger.info(f"Parsed Query: \n%s", pformat(parsed_query.model_dump(), indent=4))
         # debug(parsed_query)
         
         return parsed_query
 
 
-## testing
-# parser = QueryParser()
-# query = "make a summary from the Centre of Food Safety and the Police by topics and by dates in chronical order for the news from 1 April 2026 to 30 April 2026"
-# parsed_query = parser.parse_query(query=query)

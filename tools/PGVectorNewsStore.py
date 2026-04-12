@@ -79,12 +79,9 @@ class PGVectorNewsStore:
         with psycopg.connect(self.conn_str, row_factory=dict_row) as conn:
             rows = conn.execute("""
                 SELECT
-                    id,
-                    news_id,
                     published_date,
                     title,
                     content,
-                    url,
                     -- BM25-like score
                     ts_rank(tsv, plainto_tsquery('english', %s)) AS keyword_score,
                     -- Vector similarity (smaller distance = better)
@@ -99,7 +96,9 @@ class PGVectorNewsStore:
                 ORDER BY hybrid_score DESC;
             """, (
                 parsed_query.query_text,
-                parsed_query.keywords,
+                query_embedding,
+                parsed_query.query_text,
+                query_embedding,
                 parsed_query.start_date,
                 parsed_query.end_date
             )).fetchall()

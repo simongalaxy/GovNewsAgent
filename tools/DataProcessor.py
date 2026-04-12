@@ -3,8 +3,8 @@ from datetime import datetime
 from crawl4ai import CrawlResult
 from typing import List
 import numpy as np
-from devtools import debug
 
+from pprint import pformat
 import os
 from dotenv import load_dotenv
 from sympy import content
@@ -47,6 +47,6 @@ class DataProcessor:
             embeddings=self._embed_text(text=content)
         )
         
-        self.logger.info(f"Extracted info from result: /n%s", debug(item))
+        self.logger.info(f"Extracted info from result: /n%s", pformat(item.model_dump(exclude={"embeddings"}), indent=4))
         
         return item

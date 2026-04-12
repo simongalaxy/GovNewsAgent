@@ -2,7 +2,7 @@ from tools.logger import Logger
 from tools.NewsCrawler import NewsCrawler
 from tools.DataProcessor import DataProcessor
 from tools.PGVectorNewsStore import PGVectorNewsStore
-from tools.SummaryGenerator import SummaryGenerator
+from tools.LLMSummarizer import LLMSummarizer
 from tools.writeReport import write_report
 from tools.QueryParser import QueryParser
 
@@ -17,7 +17,7 @@ def main():
     crawler = NewsCrawler(logger=logger)
     processor = DataProcessor(logger=logger)
     db_handler = PGVectorNewsStore(logger=logger)
-    summary_generator = SummaryGenerator(logger=logger)
+    summarizer = LLMSummarizer(logger=logger)
     parser = QueryParser(logger=logger)
     
     while True:
@@ -29,23 +29,23 @@ def main():
         # parse the user query.
         parsed_query = parser.parse_query(query=user_query)
 
-        # # crawl all relevant news based on parsed_query.
-        # results = crawler.fetch_news_by_dates(
-        #     startDate=parsed_query.start_date, 
-        #     endDate=parsed_query.end_date
-        # )
+        # crawl all relevant news based on parsed_query.
+        results = crawler.fetch_news_by_dates(
+            startDate=parsed_query.start_date, 
+            endDate=parsed_query.end_date
+        )
     
-        # # extract data from each news result items and then save data to pgvector.
-        # for result in results:
-        #     newsItem = processor.get_info_from_result(result=result)
-        #     db_handler.upsert_news(item=newsItem)
+        # extract data from each news result items and then save data to pgvector.
+        for result in results:
+            newsItem = processor.get_info_from_result(result=result)
+            db_handler.upsert_news(item=newsItem)
     
-        # query to pgvector.
-        query_results = db_handler.hybrid_search(parsed_query=parsed_query)
+        # # query to pgvector.
+        # query_results = db_handler.hybrid_search(parsed_query=parsed_query)
         
-        # show the query results:
-        for i, result in enumerate(query_results, start=1):
-            logger.info(f"Record No. {i}: \n%s", pformat(result, indent=4))
+        # # show the query results:
+        # for i, result in enumerate(query_results, start=1):
+        #     logger.info(f"Record No. {i}: \n%s", pformat(result, indent=4))
         
         # summary = summary_generator.summarize_content(
         #     query=query, 

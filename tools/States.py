@@ -7,8 +7,8 @@ from typing import List, Optional
 class ParsedQuery(BaseModel):
     start_date: str | None = Field(description="start date in the query")
     end_date: str | None = Field(description="end date in the query")
-    keywords: List[str] | None = Field(description="keywords to search")
-    query_text: str = Field(description="The primary intent of the user query")
+    keywords: List[str] | None = Field(description="keywords to search, e.g. Department of Health, Programme")
+    query_text: str = Field(description="the original user query")
     
     @model_validator(mode="after")
     def fill_end_date(self):
