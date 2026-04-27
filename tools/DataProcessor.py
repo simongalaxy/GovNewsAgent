@@ -1,4 +1,4 @@
-from langchain_ollama import OllamaEmbeddings
+from ollama import Client
 from datetime import datetime
 from crawl4ai import CrawlResult
 from typing import List
@@ -7,7 +7,6 @@ import numpy as np
 from pprint import pformat
 import os
 from dotenv import load_dotenv
-from sympy import content
 load_dotenv()
 
 from tools.logger import Logger
@@ -18,10 +17,12 @@ class DataProcessor:
     def __init__(self, logger: Logger):
         self.logger = logger
         self.model = os.getenv("ollama_embedding_model")
-        self.embeddings = OllamaEmbeddings(model=self.model)
+        self.client = Client()
+
 
     def _embed_text(self, text: str) -> List[float]:
-        return self.embeddings.embed_query(text)
+        response = self.client.embeddings(model=self.model, prompt=text)
+        return response["embedding"]
     
     
     def _to_postgres_date(self, date_str: str) -> str:

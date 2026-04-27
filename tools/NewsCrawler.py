@@ -1,12 +1,13 @@
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, CacheMode, BrowserConfig, MemoryAdaptiveDispatcher, CrawlResult
 from crawl4ai.content_scraping_strategy import LXMLWebScrapingStrategy
 
-from datetime import datetime, timedelta, date, time
+from datetime import datetime, timedelta
 from pprint import pformat
 import asyncio, re
 from typing import List
 
 from tools.logger import Logger
+from tools.States import State
 
 class NewsCrawler:
     def __init__(self, logger: Logger):
@@ -17,9 +18,9 @@ class NewsCrawler:
             light_mode=True
         )
         self.dispatcher = MemoryAdaptiveDispatcher(
-            memory_threshold_percent=75,
+            memory_threshold_percent=70,
             check_interval=1,
-            max_session_permit=3
+            max_session_permit=4
         )
         self.crawl_config_datePage = CrawlerRunConfig(
             scraping_strategy=LXMLWebScrapingStrategy(),
@@ -43,7 +44,10 @@ class NewsCrawler:
     def _generate_date_range(self, startDate: str, endDate: str) -> list[str]:
         # transform the dates from string to datetime format.
         start_date = datetime.strptime(startDate, "%d %B %Y")
-        end_date = datetime.strptime(endDate, "%d %B %Y")
+        if endDate == "":
+            end_date = start_date
+        else:
+            end_date = datetime.strptime(endDate, "%d %B %Y")
         
         self.logger.info(f"Start date: {start_date}, End Date: {end_date}")
         
@@ -104,7 +108,7 @@ class NewsCrawler:
         return results
  
 
-    def fetch_news_by_dates(self, startDate: str, endDate: str) -> List[CrawlResult]:
+    def fetch_news_by_dates(self, state: State) -> None:
         """To fetch news items from the government press release website by specified date range, and return the crawl results as a list of CrawlResult objects.
 
         Args:
@@ -115,24 +119,24 @@ class NewsCrawler:
             List[CrawlResult]: in the format of a list of CrawlResult objects, where each object contains the metadata and markdown content of a news item. The metadata includes the title, date, and url of the news item.
         """
         
-        urls = self._generate_date_urls(startDate=startDate, endDate=endDate)
+        urls = self._generate_date_urls(startDate=state.parsed_query.start_date, endDate=state.parsed_query.end_date)
     
         # crawl page links of press release.
-        results = asyncio.run(self._crawl_pages(urls=urls, config=self.crawl_config_datePage))
+        date_page_results = asyncio.run(self._crawl_pages(urls=urls, config=self.crawl_config_datePage))
         
-        news_links = self._consolidate_news_urls(results=results)
+        news_links = self._consolidate_news_urls(results=date_page_results)
         
         # get the data dictionaries from press releases and save results to chromadb.
-        results = asyncio.run(self._crawl_pages(urls=news_links, config=self.crawl_config_newsPage))
+        state.news_page_results = asyncio.run(self._crawl_pages(urls=news_links, config=self.crawl_config_newsPage))
         
         # log the crawling results for debugging and verification.
-        self.logger.info(f"Crawling completed. Total news items retrieved: {len(results)}")
-        for idx, result in enumerate(results, start=1):
+        self.logger.info(f"Crawling completed. Total news items retrieved: {len(state.news_page_results)}")
+        for idx, result in enumerate(state.news_page_results, start=1):
             self.logger.info(f"News Item {idx}:")
             self.logger.info(f"Title: {result.metadata["title"]}") 
             self.logger.info(f"Content: \n%s", result.markdown)
             self.logger.info("-" * 50)
         
-        return results
+        return
     
     

@@ -22,6 +22,9 @@ class Logger:
         self.log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         self.date_format = "%Y-%m-%d %H:%M:%S"
         
+        # Create log folder if it doesn't exist
+        self._create_folder()
+        
         logging.basicConfig(
                 level=self.log_level,
                 format=self.log_format,
@@ -31,6 +34,11 @@ class Logger:
                 ]
         )
         self.logger = logging.getLogger(name)
+
+
+    def _create_folder(self):
+        os.makedirs(self.log_filepath, exist_ok=True)
+
 
     def get_logger(self):
         """Return the configured logger instance."""

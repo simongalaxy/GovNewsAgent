@@ -6,7 +6,6 @@ import numpy as np
 
 import os
 from dotenv import load_dotenv
-from sympy import content
 load_dotenv()
 
 from tools.logger import Logger

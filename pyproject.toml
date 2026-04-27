@@ -5,16 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "bs4>=0.0.2",
     "crawl4ai>=0.8.6",
-    "devtools>=0.12.2",
     "dotenv>=0.9.9",
-    "langchain>=1.2.15",
-    "langchain-chroma>=1.1.0",
-    "langchain-community>=0.4.1",
-    "langchain-core>=1.2.26",
-    "langchain-ollama>=1.0.1",
-    "langchain-text-splitters>=1.1.1",
-    "langgraph>=1.1.6",
+    "httpx>=0.28.1",
+    "ollama>=0.6.1",
     "pgvector>=0.4.2",
+    "psycopg[binary]>=3.3.3",
     "pydantic>=2.12.5",
 ]
