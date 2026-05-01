@@ -16,7 +16,7 @@ class QueryParser:
         if self.model_name is None:
             raise ValueError("Environment variable 'ollama_extraction_model' must be set")
 
-    def parse_query(self, query: str, state: State):
+    def parse_query(self, query: str) -> ParsedQuery: 
         prompt = f"""Extract the following information from the user query. 
         Content: {query}
         """
@@ -30,7 +30,7 @@ class QueryParser:
             )
             response_content = ParsedQuery.model_validate_json(response.message.content)
             self.logger.info("Parsed Query: \n%s", pformat(response_content, indent=4))
-            state.parsed_query = response_content
+            return response_content
             
         except (json.JSONDecodeError, ValidationError) as e:
             self.logger.error(f"Failed to parse LLM response: {e}")

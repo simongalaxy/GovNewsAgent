@@ -1,0 +1,25 @@
+import ollama
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+from tools.logger import Logger
+from tools.States import NewsItem
+
+
+class ContentEmbedder:
+    def __init__(self, logger: Logger):
+        self.logger = logger
+        self.model = os.getenv("ollama_embedding_model")
+
+    def embed_text(self, item: NewsItem) -> None:
+        response = ollama.embed(
+            model=self.model, 
+            input=item.content
+            )
+        item.embeddings = response["embeddings"]
+        self.logger.info(f"{item.title} - embeddings generated. Length: {len(response["embeddings"][0])}")
+    
+        return
+   
+
