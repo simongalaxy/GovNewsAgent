@@ -20,7 +20,7 @@ class ContentEmbedder:
             model=self.model, 
             input=item.content
             )
-        item.embeddings = response["embeddings"]
+        item.embeddings = response["embeddings"][0]
         self.logger.info(f"{item.title} - embeddings generated. Length: {len(response["embeddings"][0])}")
     
         return

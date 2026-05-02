@@ -22,7 +22,6 @@ class PGVectorNewsStore:
         self.db_name = os.getenv("db_name")
         self.conn_str = f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.db_name}"
         self.embedding_dim = 1024
-        self.limit = 30
         
 
         with psycopg.connect(self.conn_str) as conn:
@@ -75,31 +74,70 @@ class PGVectorNewsStore:
 
         """Perform a hybrid search combining keyword relevance, vector similarity, and date filtering."""
         
-        with psycopg.connect(self.conn_str, row_factory=dict_row) as conn:
-            rows = conn.execute("""
-                SELECT
-                    published_date,
-                    title,
-                    content,
-                    -- BM25-like score
-                    ts_rank(tsv, plainto_tsquery('english', %s)) AS keyword_score,
-                    -- Vector similarity (smaller distance = better)
-                    (embedding <-> %s) AS vector_distance,
-                    -- Hybrid score (higher = better)
-                    (
-                        0.4 * ts_rank(tsv, plainto_tsquery('english', %s)) +
-                        0.6 * (1 - (embedding <-> %s))
-                    ) AS hybrid_score
-                FROM News
-                WHERE published_date BETWEEN %s AND %s
-                ORDER BY hybrid_score DESC;
-            """, (
-                parsed_query.query_text,
-                query_embedding,
-                parsed_query.query_text,
-                query_embedding,
-                parsed_query.start_date,
-                parsed_query.end_date
-            )).fetchall()
+        sql, params = self._build_news_query(parsed=parsed_query)
 
-            return rows
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        
+        return rows
+
+    #  Build a dynamic SQL query string based on the values present in ParsedQuery, Returns (sql_string, params_list).
+    def _build_news_query(parsed: ParsedQuery) -> tuple[str, list]:
+   
+        base = """
+            SELECT
+                id,
+                title,
+                content,
+                published_at,
+                departments,
+                ts_rank(content_tsv, plainto_tsquery('english', %s)) AS keyword_score,
+                (embedding <-> %s) AS vector_distance,
+                (
+                    0.4 * ts_rank(content_tsv, plainto_tsquery('english', %s)) +
+                    0.6 * (1 - (embedding <-> %s))
+                ) AS hybrid_score
+            FROM news
+        """
+
+        where_clauses = []
+        params = []
+
+        # --- Keyword search (optional) ---
+        if parsed.keywords:
+            keyword_query = " & ".join(parsed.keywords)
+        else:
+            keyword_query = ""  # empty tsquery is allowed
+
+        # Add keyword params for ts_rank and hybrid score
+        params.append(keyword_query)  # for ts_rank
+        params.append(parsed.embedding)  # semantic vector
+        params.append(keyword_query)  # for hybrid score
+        params.append(parsed.embedding)  # semantic vector again
+
+        # --- Date range ---
+        if parsed.start_date and parsed.end_date:
+            where_clauses.append("published_at BETWEEN %s AND %s")
+            params.append(parsed.start_date)
+            params.append(parsed.end_date)
+
+        # --- Departments filter ---
+        if parsed.departments:
+            where_clauses.append("departments && %s::text[]")
+            params.append(parsed.departments)
+
+        # --- Keywords filter (optional) ---
+        if parsed.keywords:
+            where_clauses.append("content_tsv @@ plainto_tsquery('english', %s)")
+            params.append(keyword_query)
+
+        # --- Assemble WHERE clause ---
+        if where_clauses:
+            where_sql = " WHERE " + " AND ".join(where_clauses)
+        else:
+            where_sql = ""
+
+        # --- Final SQL ---
+        sql = base + where_sql + " ORDER BY hybrid_score DESC LIMIT 50;"
+
+        return sql, params

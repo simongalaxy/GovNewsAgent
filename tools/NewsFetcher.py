@@ -51,6 +51,7 @@ class NewsFetcher:
         content = soup.find('div', class_='leftBody')
         urls = [f"{self.base_url}{a['href']}" for a in content.find_all('a', href=True)]
         self.logger.info(f"Parsed {len(urls)} news URLs from date page.")
+        
         for i, url in enumerate(urls, start=1):
             self.logger.info(f"No. {i} - data type: {type(url)}: {url}")
         self.logger.info("-"*50)
@@ -90,16 +91,11 @@ class NewsFetcher:
     
     # fetch date pages.
     async def _fetch_date_page(self, url: str) -> List[str]:
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    if response.status != 200:
-                        html = await response.text()
-                        return self._parse_links(html=html)
-        except Exception as e:
-            self.logger.error(f"Failed to fetch {url}: {e}")
-            return []    
-    
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                    html = await response.text()
+                    return self._parse_links(html=html)
+
     
     # fetch news pages.
     async def _fetch_news_page(self, url: str) -> NewsItem:
@@ -136,10 +132,9 @@ class NewsFetcher:
         # fetch news items from each news page asynchronously.
         all_items = []
         for i, urls in enumerate(news_urls, start=1):
-            if len(urls) > 0:
-                self.logger.info(f"Fetching news page {i}/{len(news_urls)}: {url}")
-                news_items = asyncio.run(self._fetch_all_pages(urls=urls, fetch_function=self._fetch_news_page))
-                all_items.extend(news_items)
+            self.logger.info(f"Fetching news page {i}/{len(news_urls)}: {url}")
+            news_items = asyncio.run(self._fetch_all_pages(urls=urls, fetch_function=self._fetch_news_page))
+            all_items.extend(news_items)
 
         self.logger.info(f"Total {len(all_items)} news items were fetched from {len(urls)} date pages.")
         state.news_items = all_items
