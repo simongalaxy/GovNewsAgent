@@ -8,6 +8,7 @@ class ParsedQuery(BaseModel):
     end_date: str | None = Field(description="ISO date string, e.g. '2026-04-02'")
     keywords: List[str] | None = Field(default=None, description="free-text keywords")
     departments: List[str] | None = Field(default=None, description="HK government departments")
+    query_embeddings: List[float] | None = None
 
     
 class NewsItem(BaseModel): # to store the news items that are relevant to the user query.

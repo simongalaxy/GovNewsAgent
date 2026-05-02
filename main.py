@@ -32,13 +32,14 @@ def main():
         logger.info(f"Original query stored in state: {state.oringinal_query}")
         
         state.parsed_query = parser.parse_query(query=user_query)
+        state.parsed_query.query_embeddings = embedder.embed_query_text(query=user_query)
         
         # crawl all relevant news based on parsed_query.
         fetcher.fetch_news_by_dates(state=state)
     
         # # generate embedding and then save news items to pgvector.
         for item in state.news_items:
-            embedder.embed_text(item=item)
+            embedder.embed_news(item=item)
             # db_handler.upsert_news(item=news_item)
             
         # # query to pgvector.
