@@ -20,11 +20,11 @@ class NewsFetcher:
     # function to generate links based on the date range.
     def _generate_date_urls(self, startDate: str, endDate: str) -> list[str]:
         # transform the dates from string to datetime format.
-        start_date = datetime.strptime(startDate, "%B %d, %Y")
+        start_date = datetime.strptime(startDate, "%Y-%m-%d")
         if endDate == "":
             end_date = start_date
         else:
-            end_date = datetime.strptime(endDate, "%B %d, %Y")
+            end_date = datetime.strptime(endDate, "%Y-%m-%d")
         self.logger.info(f"Start date: {start_date}, End Date: {end_date}")
         
         dates = []

@@ -3,11 +3,12 @@ from crawl4ai import CrawlResult
 from datetime import date
 from typing import List, Optional
 
-class ParsedQuery(BaseModel): # to store the parsed information from user query.
-    start_date: str | None = Field(description="start date")
-    end_date: str | None = Field(description="end date")
-    keywords: List[str] | None = Field(description="keywords to search, e.g. Department of Health, Programme")
-    
+class ParsedQuery(BaseModel):
+    start_date: str | None = Field(description="ISO date string, e.g. '2026-04-01'")
+    end_date: str | None = Field(description="ISO date string, e.g. '2026-04-02'")
+    keywords: List[str] | None = Field(default=None, description="free-text keywords")
+    departments: List[str] | None = Field(default=None, description="HK government departments")
+
     
 class NewsItem(BaseModel): # to store the news items that are relevant to the user query.
     news_id: str
