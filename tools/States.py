@@ -24,6 +24,8 @@ class State(BaseModel): # to store the overall state of the system, including th
     query_embeddings: List[float] | None = None
     parsed_query: ParsedQuery = None
     news_items: List[NewsItem] = []
+    query_results: List[dict] = []
+    
 
     
     
