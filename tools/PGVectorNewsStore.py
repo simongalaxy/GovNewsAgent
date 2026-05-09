@@ -69,20 +69,6 @@ class PGVectorNewsStore:
 
     #  Build a dynamic SQL query string based on the values present in ParsedQuery, Returns (sql_string, params_list).
     def _build_news_query(self, state: State) -> tuple[str, list]:
-   
-        # base = """
-        #     SELECT
-        #         published_date,
-        #         title,
-        #         content,
-        #         ts_rank(tsv, plainto_tsquery('english', %s)) AS keyword_score,
-        #         (embedding <-> %s) AS vector_distance,
-        #         (
-        #             0.4 * ts_rank(tsv, plainto_tsquery('english', %s)) +
-        #             0.6 * (1 - (embedding <-> %s))
-        #         ) AS hybrid_score
-        #     FROM news
-        # """
 
         base = """
             SELECT
@@ -100,21 +86,22 @@ class PGVectorNewsStore:
             where_clauses.append("published_date BETWEEN %s AND %s")
             params.append(state.parsed_query.start_date)
             params.append(state.parsed_query.end_date)
-        
-        if state.parsed_query.start_date:
+        elif state.parsed_query.start_date:
             where_clauses.append("published_date = %s")
             params.append(state.parsed_query.start_date)
+        else:
+            pass
 
         # build tsquery string
         if state.parsed_query.keywords:
-            tsquery = " & ".join(state.parsed_query.keywords)
+            tsquery = " | ".join(state.parsed_query.keywords)
         else:
             tsquery = None
             
         # keyword Full Text Search filter
         if tsquery:
             where_clauses.append(
-                "to_tsvector('english', content) @@ plainto_tsquery('english', %s)"
+                "tsv @@ plainto_tsquery('english', %s)"
             )
             params.append(tsquery)
 
@@ -127,11 +114,8 @@ class PGVectorNewsStore:
             where_sql = ""
 
         # --- Final SQL ---
-        # sql = base + where_sql + " ORDER BY hybrid_score DESC LIMIT 50;"
-        sql = base + where_sql + " ORDER BY published_date DESC;"
+        sql = base + where_sql + " ORDER BY published_date ASC;"
         
-        self.logger.info(f"Constructed SQL query string: \n%s", sql)
-        self.logger.info(f"param")
         return sql, params
 
    # ---------------------------------------------------------
