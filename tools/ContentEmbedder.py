@@ -31,7 +31,7 @@ class ContentEmbedder:
             model=self.model, 
             input=query
             )
-        embeddings = response["embeddings"]
+        embeddings = response["embeddings"][0]
         self.logger.info(f"query embeddings generated. Length: {len(response["embeddings"][0])}")
     
         return embeddings

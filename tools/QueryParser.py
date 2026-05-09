@@ -29,16 +29,12 @@ class QueryParser:
         {{
         "start_date": "YYYY-MM-DD",
         "end_date": "YYYY-MM-DD",
-        "departments": ["string"]
+        "keywords": ["string"]
         }}
 
         Rules:
         - Convert all dates to ISO format.
-        - "Police" must be normalized to "Hong Kong Police Force".
-        - "Department of Health" stays as-is.
-        - Departments NEVER belong to dates.
-        - If multiple departments are mentioned, list all of them.
-        
+        - record all keywords except "news".
         """
         
         try:
