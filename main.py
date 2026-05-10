@@ -6,6 +6,7 @@ from tools.NewsFetcher import NewsFetcher
 from tools.QueryParser import QueryParser
 from tools.ContentEmbedder import ContentEmbedder
 from tools.PGVectorNewsStore import PGVectorNewsStore
+from tools.ReportGenerator import ReportGenerator
 
 
 from pprint import pformat
@@ -20,6 +21,7 @@ def main():
     fetcher = NewsFetcher(logger=logger)
     embedder = ContentEmbedder(logger=logger)
     db_handler = PGVectorNewsStore(logger=logger)
+    generator = ReportGenerator(logger=logger)
     
     while True:
         user_query = input("Enter the query to the Gov News or type 'q' for exit:")
@@ -44,18 +46,24 @@ def main():
             db_handler.upsert_news(item=item)
             
         # query to pgvector.
-        query_results = db_handler.search_news(state=state)
+        state.query_results = db_handler.search_news(state=state)
         
         # show the query results:
-        for i, result in enumerate(query_results, start=1):
+        for i, result in enumerate(state.query_results, start=1):
             logger.info(f"Record No. {i}: \n%s", pformat(result, indent=4))
         
-        # summary = summary_generator.summarize_content(
-        #     query=query, 
-        #     contents=query_results
-        # )
-        # # write_report(markdown=summary)
-    
+        generator.generate_report(state=state)
+
+        # log all records in state.
+        logger.info("#"*50)
+        logger.info(f"State Summary:")
+        logger.info("Original Query: %s", state.original_query)
+        logger.info("Parsed Query: \n%s", pformat(state.query_results, indent=4))
+        logger.info(f"Total no. of News items scraped: {len(state.news_items)}")
+        logger.info(f"No. of Query results: {len(state.query_results)}")
+        logger.info("Report Generated: \n%s", state.markdown)
+        logger.info("#"*50)
+        
     return
 
 if __name__ == "__main__":

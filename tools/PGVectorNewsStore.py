@@ -100,9 +100,7 @@ class PGVectorNewsStore:
             
         # keyword Full Text Search filter
         if tsquery:
-            where_clauses.append(
-                "tsv @@ plainto_tsquery('english', %s)"
-            )
+            where_clauses.append("tsv @@ plainto_tsquery('english', %s)")
             params.append(tsquery)
 
 
@@ -134,8 +132,8 @@ class PGVectorNewsStore:
                     
                     cur.execute(sql, params)
                     rows = cur.fetchall()
-                    
                     self.logger.info("Fetched %d rows", len(rows))
+                    
                     return rows
         
         except Exception as e:

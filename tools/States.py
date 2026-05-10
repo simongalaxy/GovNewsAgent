@@ -7,7 +7,6 @@ class ParsedQuery(BaseModel):
     start_date: str | None = Field(description="ISO date string, e.g. '2026-04-01'")
     end_date: str | None = Field(description="ISO date string, e.g. '2026-04-02'")
     keywords: List[str] | None = Field(default=None, description="free-text keywords")
-    # departments: List[str] | None = Field(default=None, description="Hong Kong Government Departments and Bureau")
 
     
 class NewsItem(BaseModel): # to store the news items that are relevant to the user query.
@@ -25,6 +24,7 @@ class State(BaseModel): # to store the overall state of the system, including th
     parsed_query: ParsedQuery = None
     news_items: List[NewsItem] = []
     query_results: List[dict] = []
+    markdown: str = None
     
 
     
