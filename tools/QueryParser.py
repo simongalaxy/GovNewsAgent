@@ -34,7 +34,7 @@ class QueryParser:
 
         Rules:
         - Convert all dates to ISO format.
-        - record all keywords except "news".
+        - record all keywords except "summarize", "scrape", "all", "news".
         """
         
         try:
@@ -52,7 +52,8 @@ class QueryParser:
             
             raw = response["message"]["content"]
             parsed_content = ParsedQuery.model_validate_json(raw)
-            self.logger.info("Parsed Query: \n%s", pformat(parsed_content, indent=4))
+            self.logger.info("Parsed Query: \n%s", pformat(parsed_content.model_dump(by_alias=True), indent=4))
+            
             return parsed_content
             
         except (json.JSONDecodeError, ValidationError) as e:

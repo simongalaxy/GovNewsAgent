@@ -40,7 +40,7 @@ def main():
         # crawl all relevant news based on parsed_query.
         fetcher.fetch_news_by_dates(state=state)
     
-        # # generate embedding and then save news items to pgvector.
+        # generate embedding and then save news items to pgvector.
         for item in state.news_items:
             embedder.embed_news(item=item)
             db_handler.upsert_news(item=item)
@@ -49,17 +49,17 @@ def main():
         state.query_results = db_handler.search_news(state=state)
         
         # show the query results:
-        for i, result in enumerate(state.query_results, start=1):
-            logger.info(f"Record No. {i}: \n%s", pformat(result, indent=4))
+        # for i, result in enumerate(state.query_results, start=1):
+        #     logger.info(f"Record No. {i}: \n%s", pformat(result, indent=4))
         
         generator.generate_report(state=state)
 
         # log all records in state.
         logger.info("#"*50)
         logger.info(f"State Summary:")
-        logger.info("Original Query: %s", state.original_query)
-        logger.info("Parsed Query: \n%s", pformat(state.query_results, indent=4))
-        logger.info(f"Total no. of News items scraped: {len(state.news_items)}")
+        logger.info("Original Query: \n%s", state.original_query)
+        logger.info("Parsed Query: \n%s", pformat(state.parsed_query.model_dump(by_alias=True), indent=4))
+        logger.info(f"No. of News items: {len(state.news_items)}")
         logger.info(f"No. of Query results: {len(state.query_results)}")
         logger.info("Report Generated: \n%s", state.markdown)
         logger.info("#"*50)

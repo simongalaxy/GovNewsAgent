@@ -1,11 +1,9 @@
-from pprint import pformat
-
 import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
-import markdown
 from typing import List, Any
 from datetime import datetime, timedelta
+from pprint import pformat
 
 from tools.logger import Logger
 from tools.States import State, NewsItem
@@ -52,9 +50,9 @@ class NewsFetcher:
         urls = [f"{self.base_url}{a['href']}" for a in content.find_all('a', href=True)]
         self.logger.info(f"Parsed {len(urls)} news URLs from date page.")
         
-        for i, url in enumerate(urls, start=1):
-            self.logger.info(f"No. {i} - data type: {type(url)}: {url}")
-        self.logger.info("-"*50)
+        # for i, url in enumerate(urls, start=1):
+        #     self.logger.info(f"No. {i} - data type: {type(url)}: {url}")
+        # self.logger.info("-"*50)
         
         return urls
 
@@ -71,11 +69,12 @@ class NewsFetcher:
     def _parse_news(self, html: str, url: str) -> NewsItem:
         soup = BeautifulSoup(html, 'html.parser')
 
+        # get the metadata relating to the news.
         news_id = url.split("/")[-1].split(".")[0]
         date = soup.find('div', class_='mB15 f15').get_text().split("\n")[0].split(", ", 1)[-1].strip()
         published_date = self._convert_to_postgres_date(date_str=date)
         title = soup.find('span', id='PRHeadlineSpan').get_text(strip=True)
-        content = markdown.markdown(soup.find('span', id='pressrelease').get_text(strip=True))
+        content = soup.find('span', id='pressrelease').get_text(strip=True).replace("<p>", "").replace("</p>", "").replace("\u200b", "")
         
         item = NewsItem(
             news_id=news_id,
@@ -84,7 +83,7 @@ class NewsFetcher:
             content=content,
             url=str(url)
         )
-        self.logger.info("Fetched news item: \n%s", pformat(item.model_dump(), indent=4))
+        self.logger.info("Fetched news item: \n%s", pformat(item.model_dump(by_alias=True), indent=4))
         
         return item
 
@@ -125,14 +124,10 @@ class NewsFetcher:
         news_urls = asyncio.run(self._fetch_all_pages(urls=urls, fetch_function=self._fetch_date_page))
         self.logger.info(f"Total {len(news_urls)} news URLs fetched from date pages.")
         
-        for i, url in enumerate(news_urls, start=1):
-            self.logger.info(f"No. {i} - data type: {type(url)}: {url}")
-        self.logger.info("-"*50)
-        
         # fetch news items from each news page asynchronously.
         all_items = []
         for i, urls in enumerate(news_urls, start=1):
-            self.logger.info(f"Fetching news page {i}/{len(news_urls)}: {url}")
+            self.logger.info(f"Fetching news page {i}/{len(news_urls)}: {urls}")
             news_items = asyncio.run(self._fetch_all_pages(urls=urls, fetch_function=self._fetch_news_page))
             all_items.extend(news_items)
 
@@ -140,3 +135,5 @@ class NewsFetcher:
         state.news_items = all_items
         
         return
+    
+    
