@@ -1,5 +1,5 @@
 import json
-import ollama
+from ollama import Client
 from pydantic import ValidationError
 from pprint import pformat
 
@@ -11,11 +11,12 @@ load_dotenv()
 
 class QueryParser:
     def __init__(self, logger):
+        # setup logger.
         self.logger = logger
-        model_name = os.getenv("ollama_extraction_model")
-        if model_name is None:
-            raise ValueError("Environment variable 'ollama_extraction_model' must be set")
-        self.model_name = model_name
+        
+        # ollama setup.
+        self.model_name = os.getenv("ollama_extraction_model")
+        self.client = Client()
 
     def parse_query(self, query: str) -> ParsedQuery: 
         prompt = f"""
@@ -34,11 +35,11 @@ class QueryParser:
 
         Rules:
         - Convert all dates to ISO format.
-        - record all keywords except "summarize", "scrape", "all", "news".
+        - Record all keywords except "summarize", "scrape", "all", "news".
         """
         
         try:
-            response = ollama.chat(
+            response = self.client.chat(
                 model=self.model_name,
                 messages=[
                     {

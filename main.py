@@ -8,7 +8,6 @@ from tools.ContentEmbedder import ContentEmbedder
 from tools.PGVectorNewsStore import PGVectorNewsStore
 from tools.ReportGenerator import ReportGenerator
 
-
 from pprint import pformat
 
 # main entry point.
@@ -38,20 +37,18 @@ def main():
         state.parsed_query = parser.parse_query(query=user_query)
         
         # crawl all relevant news based on parsed_query.
-        fetcher.fetch_news_by_dates(state=state)
-    
-        # generate embedding and then save news items to pgvector.
-        for item in state.news_items:
-            embedder.embed_news(item=item)
-            db_handler.upsert_news(item=item)
+        if state.parsed_query.start_date is not None:
+            fetcher.fetch_news_by_dates(state=state)
+        
+            # generate embedding and then save news items to pgvector.
+            for item in state.news_items:
+                embedder.embed_news(item=item)
+                db_handler.upsert_news(item=item)
             
         # query to pgvector.
         state.query_results = db_handler.search_news(state=state)
         
-        # show the query results:
-        # for i, result in enumerate(state.query_results, start=1):
-        #     logger.info(f"Record No. {i}: \n%s", pformat(result, indent=4))
-        
+        # generate the report.
         generator.generate_report(state=state)
 
         # log all records in state.

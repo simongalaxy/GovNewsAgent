@@ -86,7 +86,7 @@ class PGVectorNewsStore:
             where_clauses.append("published_date BETWEEN %s AND %s")
             params.append(state.parsed_query.start_date)
             params.append(state.parsed_query.end_date)
-        elif state.parsed_query.start_date:
+        elif state.parsed_query.start_date or state.parsed_query.end_date:
             where_clauses.append("published_date = %s")
             params.append(state.parsed_query.start_date)
         else:

@@ -1,6 +1,6 @@
 # Government News Summary Agent
 
-A fully automated AI‑powered pipeline that crawls government news webpages, converts unstructured text into structured data + embeddings, and generates topic‑based, date‑based, and department‑based media summaries in Markdown format.
+An LLM‑powered, fully automated news‑intelligence pipeline that crawls government websites, extracts structured data, generates embeddings, and produces clean Markdown summaries — all without manual reading.
 
 ---
 
@@ -16,8 +16,14 @@ Manually reading, organizing, and summarizing these articles is:
 
 Traditional scraping alone cannot extract meaningful insights from unstructured text.
 
-This project solves the problem by combining LLMs, hybrid search, and structured extraction to automatically produce clean, accurate media summaries.
+This project solves that by combining:
 
+- High‑performance async crawling
+- LLM‑powered extraction + summarization
+- Full Text search/Hybrid search (later) (keyword + vector)
+- Automated Markdown report generation
+
+The result: a fully automated government news intelligence system.
 ---
 
 ## 🎯 What Problem Does This Project Solve?
@@ -30,7 +36,10 @@ The system converts raw HTML news pages into structured, queryable data, includi
 - URL
 - Embeddings (for semantic + hybrid search)
 
-Then, using LLMs, it generates media summaries tailored to the user’s request — grouped by topic, date, or department.
+Then, using LLMs, it generates media summaries tailored to the user’s request — grouped by:
+- Topic
+- Date/Date Range
+- Department
 
 This enables analysts, researchers, and government teams to quickly understand what happened, without manually reading every article.
 
@@ -38,36 +47,28 @@ This enables analysts, researchers, and government teams to quickly understand w
 
 ## 🧰 Technologies Used
 
-### 🕷️ Crawl4AI
-- High‑performance crawler for large‑scale scraping
-- Asynchronous and reliable
-- Extracts clean text from government news pages
-
-### 🔗 LangChain
-- Manages prompts, LLM calls, and structured output
-- Provides a clean interface for reasoning and summarization
+### Aiohttp
+- Asynchronous, high‑throughput crawler
+- Extracts clean text from government news pages 
+(“High‑performance crawler for large‑scale scraping”)
 
 ### 🦙 Ollama
-- Runs LLMs locally for privacy, speed, and zero cost
-- Performs:
-    - Query parsing
-    - Content extraction
-    - Embedding generation
-    - Final summarization
+- Local LLM inference for privacy + zero cost
+- Handles query parsing, extraction, embeddings, and summarization
+(“Runs LLMs locally for privacy, speed, and zero cost”)
 
 ### 🐘 PostgreSQL and PGvector
-- Stores structured news data
-- Stores embeddings for semantic search
-- Performs hybrid search (keyword + vector) using SQL
-- Production‑ready and scalable 
+- Stores structured news
+- Embedding search + hybrid search
+(“Stores embeddings for semantic search… performs hybrid search”)
 
 ### 🧩 Pydantic
 - Strict schema validation
 - Ensures extracted data is clean before insertion
 
 ### ⚡ Asyncio
-- Enables concurrent crawling and processing
-- Greatly improves throughput
+- Concurrent crawling + processing
+- Major throughput improvements
 
 ---
 
@@ -77,14 +78,13 @@ GovNewsAgent/
 │
 ├── tools/
 │   ├── __init__.py
-│   ├── DataProcessor.py      # Extracts structured fields from CrawlResults
-│   ├── LLMSummarizer.py      # Generates final news summaries
-│   ├── logger.py             # Logging utilities
-│   ├── NewsCrawler.py        # Crawl4AI-based news crawler
+│   ├── States.py             # Pydantic models for parsing queries and storing news items
+│   ├── QueryParser.py        # LLM-based query parsing
+│   ├── NewsFetcher.py        # Async news crawler
 │   ├── PGVectorNewsStore.py  # PostgreSQL + PGvector storage and queries
-│   ├── QueryParser.py        # Parses user requests using LLMs
-│   ├── States.py             # Pydantic models for parsed queries and news items
-│   └── writeReport.py        # Writes summaries to Markdown files
+│   ├── logger.py             # Logging utilities
+│   ├── ContentEmbedder.py    # Embedding generation
+│   └── ReportGenerator.py    # Generate final news summaries in Markdown files
 │
 ├── main.py                   # Main entry point
 ├── .env                      # Environment variables
@@ -97,12 +97,12 @@ GovNewsAgent/
 
 ## 🚀 How It Works
 
-1. **Crawl news webpages** using Crawl4AI
-2. **Extract structured fields (title, content, URL, etc.)**
-3. **Generate embeddings** using a local LLM (via Ollama)
-4. **Store data + embeddings** in PostgreSQL with PGvector
-5. **Parse user request (topics, date range, departments)** using LLMs
-6. **Perform hybrid search** to retrieve relevant articles
+1. **Parse user request (topics, date range, departments)** using LLMs
+2. **Crawl Government news webpages** using Crawl4AI
+3. **Extract structured fields (title, content, URL, etc.)**
+4. **Generate embeddings** using a local LLM (via Ollama)
+5. **Store data + embeddings** in PostgreSQL with PGvector
+6. **Perform full-text/Hybrid search** to retrieve relevant articles
 7. **Generate a clean, structured media summary** in Markdown
 
 The result is a fully automated, end‑to‑end system for government news intelligence.
@@ -120,8 +120,9 @@ uv sync
 
 ## Set up your .env file:
 POSTGRES_URL=your_postgres_connection_string
-ollama_llm_model=llama3:latest
-ollama_embedding_model=bge-m3:latest 
+ollama_llm_model=llama3.2:3b
+ollama_embedding_model=bge-m3:latest
+ollama_extraction_model=phi4-mini:latest
 
 ## Usage
 uv run main.py
