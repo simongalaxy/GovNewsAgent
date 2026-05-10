@@ -10,10 +10,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
-
-
 class ReportGenerator:
     def __init__(self, logger: Logger):
         # setup logger.
@@ -68,21 +65,44 @@ class ReportGenerator:
             articles = self._format_articles(state.query_results)
 
             # 3. Strong system + user prompt
-            system_prompt = "You are a government news summarizer."
+            system_prompt = """You are an expert government news analyst and report writer.
+            Your job is to synthesize multiple official news articles into a high-quality, comprehensive situational summary for senior officials.
 
-            user_prompt = f"""Below are multiple government news articles. Each article has a date, title, and content.
+            Core rules:
+            - Be thorough and comprehensive — do not be overly concise.
+            - Always preserve strict chronological order (earliest to latest).
+            - Group related developments logically (by department, topic, or theme) while maintaining overall timeline.
+            - Highlight key decisions, policy changes, new initiatives, statements, and outcomes.
+            - Include important details, numbers, dates, and responsible agencies.
+            - Avoid repetition, speculation, and commentary. Stick to facts from the articles.
+            - Use clear, formal, neutral language suitable for government reporting."""
 
-            Articles:
+            user_prompt = f"""Below are the full texts of multiple government news articles related to the query.
+
+            Articles (in no particular order):
             {articles}
 
-            Your tasks:
-            1. Group information by department or topic where possible.
-            2. Preserve chronology (earliest to latest).
-            3. Be concise but complete, focusing only on information relevant to the query.
-            4. Avoid repetition and speculation.
+            Please create a comprehensive **Media Summary Report** with the following requirements:
 
-            Write the final summary in clear paragraphs in a markdown format.
-            """
+            1. **Structure**:
+            - Start with a short executive overview (2-4 sentences).
+            - Then organize the main body in strict chronological order (earliest events first).
+            - Use clear markdown headings and sub-headings (## Date or ## Topic).
+            - Group related developments when logical, but never break chronology.
+
+            2. **Content Guidelines**:
+            - Cover all significant points from the provided articles.
+            - Be detailed and comprehensive rather than brief.
+            - Include key facts, figures, dates, names of officials/agencies, and outcomes.
+            - Show progression and evolution of the issue over time.
+            - If multiple departments or topics are involved, create logical sections while keeping the overall timeline intact.
+
+            3. **Style**:
+            - Formal, objective, and professional tone.
+            - Clear paragraphs. Use bullet points only for lists of actions or key outcomes when appropriate.
+            - Do not omit important information just to keep it short.
+
+            Write the complete report now."""
  
             # 4. Call Ollama directly
             response = self.client.chat(
@@ -92,9 +112,11 @@ class ReportGenerator:
                     {"role": "user", "content": user_prompt}
                 ],
                 options={
-                    "temperature": 0.0,      # Very important for factual report
-                    "num_ctx": 16384,
-                    "num_predict": 4096,     # Allow long report
+                    "temperature": 0.1,      # Slight increase from 0.0 helps fluency without losing facts
+                    "num_ctx": 32768,        # Increase context if your model supports it (many do)
+                    "num_predict": 8192,     # Significantly increase max output length
+                    "top_p": 0.95,
+                    "top_k": 40,
                 }
             )
 
