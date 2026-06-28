@@ -6,7 +6,7 @@ from typing import List, Optional
 class ParsedQuery(BaseModel):
     start_date: str | None = Field(description="ISO date string, e.g. '2026-04-01'")
     end_date: str | None = Field(description="ISO date string, e.g. '2026-04-02'")
-    keywords: List[str] | None = Field(default=None, description="free-text keywords")
+    keywords: List[str] | None = Field(default=None, description="free-text keywords, not a action verb")
 
     
 class NewsItem(BaseModel): # to store the news items that are relevant to the user query.

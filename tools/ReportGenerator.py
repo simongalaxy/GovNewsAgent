@@ -11,16 +11,25 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 class ReportGenerator:
     def __init__(self, logger: Logger):
-        # setup logger.
+        # setup logger and report path.
         self.logger = logger
+        self.reportpath = os.getenv("reportpath")
         
         # Ollama setup
         self.model_name = os.getenv("ollama_llm_model")
         self.client = Client()
         
         self.logger.info(f"Report Generator initiated with model - {self.model_name}")
+    
+    # Create log folder if it doesn't exist
+        self._create_folder()
+    
+    
+    def _create_folder(self):
+        os.makedirs(self.reportpath, exist_ok=True)
     
     
     def _format_articles(self, rows: List[Dict]) -> str:
