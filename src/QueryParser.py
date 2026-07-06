@@ -3,11 +3,8 @@ from ollama import Client
 from pydantic import ValidationError
 from pprint import pformat
 
-from tools.States import ParsedQuery, State
-
-import os
-from dotenv import load_dotenv
-load_dotenv()
+from src.States import ParsedQuery, State
+from src.Settings import settings
 
 class QueryParser:
     def __init__(self, logger):
@@ -15,7 +12,7 @@ class QueryParser:
         self.logger = logger
         
         # ollama setup.
-        self.model_name = os.getenv("ollama_extraction_model")
+        self.model_name = settings.ollama_extraction_model
         self.client = Client()
 
     def parse_query(self, query: str) -> ParsedQuery: 

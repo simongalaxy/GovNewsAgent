@@ -6,7 +6,7 @@ from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 
-from tools.logger import Logger
+from src.logger import Logger
 
 import os
 from typing import Optional, List

@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-from tools.logger import Logger
-from tools.States import NewsItem
+from src.logger import Logger
+from src.States import NewsItem
 
 
 class ContentEmbedder:

@@ -1,7 +1,7 @@
 from ollama import Client  # Native Ollama client
 
-from tools.logger import Logger
-from tools.States import State
+from src.logger import Logger
+from src.States import State
 
 from typing import List, Dict
 from pathlib import Path

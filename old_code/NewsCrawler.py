@@ -6,8 +6,8 @@ from pprint import pformat
 import asyncio, re
 from typing import List
 
-from tools.logger import Logger
-from tools.States import State
+from src.logger import Logger
+from src.States import State
 
 class NewsCrawler:
     def __init__(self, logger: Logger):

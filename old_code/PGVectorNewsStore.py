@@ -8,8 +8,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from tools.logger import Logger
-from tools.States import NewsItem, ParsedQuery, State
+from src.logger import Logger
+from src.States import NewsItem, ParsedQuery, State
 
 
 class PGVectorNewsStore:

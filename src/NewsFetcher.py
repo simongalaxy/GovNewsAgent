@@ -5,8 +5,8 @@ from typing import List, Any
 from datetime import datetime, timedelta
 from pprint import pformat
 
-from tools.logger import Logger
-from tools.States import State, NewsItem
+from src.logger import Logger
+from src.States import State, NewsItem
 
 
 class NewsFetcher:
