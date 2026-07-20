@@ -33,8 +33,8 @@ def main():
         state.parsed_query = parser.parse_query(query=user_query)
         
         # crawl all relevant news based on parsed_query.
-        if state.parsed_query.start_date is not None:
-            fetcher.fetch_news_by_dates(state=state)
+        # if state.parsed_query.start_date is not None:
+        #     fetcher.fetch_news_by_dates(state=state)
         
         
         

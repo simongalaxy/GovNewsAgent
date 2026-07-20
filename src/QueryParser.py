@@ -1,59 +1,53 @@
-import json
-from ollama import Client
-from pydantic import ValidationError
-from pprint import pformat
+import instructor
 
-from src.States import ParsedQuery, State
 from src.Settings import settings
+from src.logger import Logger
+from src.States import ParsedQuery
 
 class QueryParser:
-    def __init__(self, logger):
-        # setup logger.
-        self.logger = logger
+    def __init__(self, logger: Logger):
+        # initiate logger.
+        self.logger=logger
         
-        # ollama setup.
+        # ollama llm settings.
         self.model_name = settings.ollama_extraction_model
-        self.client = Client()
-
-    def parse_query(self, query: str) -> ParsedQuery: 
-        prompt = f"""
-        Extract the dates and keywords from the user query. 
+        self.client = instructor.from_provider(
+            f"ollama/{self.model_name}",
+            mode=instructor.Mode.JSON_SCHEMA,
+        )
+    
+    
+    def parse_query(self, query: str) -> ParsedQuery:
+        self.logger.info("Start parsing information from query.")
         
-        Content: 
-        {query}
+        system_instruction = (
+            "You are a strict data extraction AI. Extract the requested fields "
+            "as a flat JSON object matching the requested schema layout. "
+            "Convert any relative or explicit dates to YYYY-MM-DD format."
+        )
+
+        user_prompt = f"""
+        Extract entities from the user query.
         
-        You MUST output ONLY valid JSON that matches this schema:
-
-        {{
-        "start_date": "YYYY-MM-DD",
-        "end_date": "YYYY-MM-DD",
-        "keywords": ["string"]
-        }}
-
-        Rules:
-        - Convert all dates to ISO format.
-        - Record all keywords except "summarize", "scrape", "all", "news".
+        User Query: "{query}"
+        
+        Filtering Rules:
+        - Do not include action verbs (like 'news', 'summarize', 'scrape', 'all') in keywords.
+        - Put entities like 'Department of Health' into the departments array.
         """
         
-        try:
-            response = self.client.chat(
-                model=self.model_name,
-                messages=[
-                    {
-                        "role": "user", 
-                        "content": prompt
-                        }
-                    ],
-                format="json",
-                options={"temperature": 0.0}
-            )
-            
-            raw = response["message"]["content"]
-            parsed_content = ParsedQuery.model_validate_json(raw)
-            self.logger.info("Parsed Query: \n%s", pformat(parsed_content.model_dump(by_alias=True), indent=4))
-            
-            return parsed_content
-            
-        except (json.JSONDecodeError, ValidationError) as e:
-            self.logger.error(f"Failed to parse LLM response: {e}")
-            raise
+        resp = self.client.create( 
+            model=self.model_name, 
+            messages=[ 
+                { "role": "system", "content": system_instruction },
+                { "role": "user", "content": user_prompt } 
+            ], 
+            max_retries=3,
+            timeout=15.0, 
+            response_model=ParsedQuery, 
+        ) 
+
+        parsed_query_json = resp.model_dump_json(indent=2)
+        self.logger.info(f"Parsed Query: \n%s", parsed_query_json)
+        
+        return resp

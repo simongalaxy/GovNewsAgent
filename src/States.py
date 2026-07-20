@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field, model_validator
-from crawl4ai import CrawlResult
 from datetime import date
 from typing import List, Optional
 
 class ParsedQuery(BaseModel):
-    start_date: str | None = Field(description="ISO date string, e.g. '2026-04-01'")
-    end_date: str | None = Field(description="ISO date string, e.g. '2026-04-02'")
-    keywords: List[str] | None = Field(default=None, description="free-text keywords, not a action verb")
+    start_date: str = Field(description="The beginning date, ISO date format YYYY-MM-DD")
+    end_date: str | None = Field(description="The ending date, ISO date format YYYY-MM-DD")
+    keywords: List[str] | None = Field(description="List of search terms or core topics")
+    departments: List[str] | None = Field(description="Government branches, bureaux or departments")
 
     
 class NewsItem(BaseModel): # to store the news items that are relevant to the user query.
