@@ -10,11 +10,16 @@ class ParsedQuery(BaseModel):
 
     
 class NewsItem(BaseModel): # to store the news items that are relevant to the user query.
-    news_id: str
-    published_date: date
-    title: str
-    content: str
-    url: str
+    news_id: str = Field(description="ID of the press release")
+    title: str = Field(description="title of the press release")
+    content: str = Field(description="Raw Content of the press release")
+    url: str = Field(description="url of the press release")
+    published_date: str = Field(default=None, description="Date published the press release")
+    subject_department: str = Field(default=None, description="Subject Department/Bureau issued this press release")
+    category: str = Field(default=None, description="Category of Press Release, e.g. Security, Education, Health, Welfare, Public Goverance")
+    keywords: list[str] | None = Field(description="Maximun 5 keywords of the press release, keep original wordings")
+    content_type: Literal["Press Release", "Speech", "Response to Query"] = Field(description="Type by its content")
+    summary: List[str] | None = Field(description="Summary of Press Release in bullet points with maximun 800 words")
     embeddings: List[float] = []
 
 
