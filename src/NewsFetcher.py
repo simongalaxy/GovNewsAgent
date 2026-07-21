@@ -37,7 +37,7 @@ class NewsFetcher:
         self.logger.info(f"Generated {len(urls)} date URLs:")
         
         for i, url in enumerate(urls, start=1):
-            self.logger.info(f"No. {i}: {url}")
+            self.logger.info(f"No. {i}: {url}\n")
         self.logger.info("-"*50)
         
         return urls
