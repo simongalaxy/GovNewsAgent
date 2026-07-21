@@ -50,10 +50,6 @@ class NewsFetcher:
         urls = [f"{self.base_url}{a['href']}" for a in content.find_all('a', href=True)]
         self.logger.info(f"Parsed {len(urls)} news URLs from date page.")
         
-        # for i, url in enumerate(urls, start=1):
-        #     self.logger.info(f"No. {i} - data type: {type(url)}: {url}")
-        # self.logger.info("-"*50)
-        
         return urls
 
 
@@ -77,7 +73,7 @@ class NewsFetcher:
         content = soup.find('span', id='pressrelease').get_text(strip=True).replace("<p>", "").replace("</p>", "").replace("\u200b", "")
         
         item = NewsItem(
-            news_id=news_id,
+            id=news_id,
             published_date=published_date,
             title=title,
             content=content,

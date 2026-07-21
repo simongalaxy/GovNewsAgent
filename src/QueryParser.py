@@ -1,4 +1,5 @@
 import instructor
+from openai import OpenAI
 
 from src.Settings import settings
 from src.logger import Logger
@@ -9,10 +10,22 @@ class QueryParser:
         # initiate logger.
         self.logger=logger
         
-        # ollama llm settings.
-        self.model_name = settings.ollama_extraction_model
-        self.client = instructor.from_provider(
-            f"ollama/{self.model_name}",
+        # # local ollama llm settings.
+        # self.model_name = settings.ollama_extraction_model
+        # self.client = instructor.from_provider(
+        #     f"ollama/{self.model_name}",
+        #     mode=instructor.Mode.JSON_SCHEMA,
+        # )
+        
+        # cloud ollama llm settings.
+        self.model_name = settings.ollama_cloud_model
+        self.base_url = settings.ollama_base_url
+        self.api_key = settings.ollama_api_key
+        self.client = instructor.from_openai(
+            OpenAI(
+                base_url=self.base_url,
+                api_key=self.api_key
+            ),
             mode=instructor.Mode.JSON_SCHEMA,
         )
     
