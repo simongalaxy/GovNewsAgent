@@ -10,13 +10,6 @@ class QueryParser:
         # initiate logger.
         self.logger=logger
         
-        # # local ollama llm settings.
-        # self.model_name = settings.ollama_extraction_model
-        # self.client = instructor.from_provider(
-        #     f"ollama/{self.model_name}",
-        #     mode=instructor.Mode.JSON_SCHEMA,
-        # )
-        
         # cloud ollama llm settings.
         self.model_name = settings.ollama_cloud_model
         self.base_url = settings.ollama_base_url

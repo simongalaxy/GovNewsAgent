@@ -182,12 +182,13 @@ class PG_DBHandler:
             return None
     
     def retrieve_news_for_extracting_data(self, state: State) -> tuple[str, List]:
-         base = """
+        base = """
             SELECT
+                id,
                 published_date,
                 title,
                 content
-            FROM news
+            FROM GovNews
         """
         
         where_clauses = []
@@ -212,11 +213,14 @@ class PG_DBHandler:
             where_sql = ""
 
         # --- Final SQL ---
-        query = base + where_sql + " ORDER BY published_date ASC;"
+        sql = base + where_sql + " ORDER BY published_date ASC;"
             
         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(query, (keyword, ))
-            return cur.fetchall()
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+            self.logger.info("Fetched %d rows", len(rows))
+            
+            return rows
         
     #  Build a dynamic SQL query string based on the values present in ParsedQuery, Returns (sql_string, params_list).
 #     def _build_news_query(self, state: State) -> tuple[str, list]:
