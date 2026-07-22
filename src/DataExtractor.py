@@ -2,7 +2,8 @@ import os
 import json
 import asyncio
 import instructor
-from openai import OpenAI
+from openai import AsyncOpenAI
+# from openai import OpenAI
 from pprint import pformat
 
 
@@ -11,7 +12,7 @@ from src.Settings import settings
 from src.States import State, NewsItem
 
 
-class NewsExtractor:
+class DataExtractor:
     def __init__(self, logger: Logger):
         # logger setting.
         self.logger = logger
@@ -21,25 +22,24 @@ class NewsExtractor:
         self.base_url = settings.ollama_base_url
         self.api_key = settings.ollama_api_key
         self.client = instructor.from_openai(
-            OpenAI(
+            AsyncOpenAI(
                 base_url=self.base_url,
                 api_key=self.api_key
             ),
-            async_client=True,
             mode=instructor.Mode.JSON_SCHEMA,  # Forces JSON extraction compatible with Ollama
         )
 
 
-    async def _extract_data(self, item: NewsItem):
-        content = f"Title: {item.title}\nContent:\n{item.content}"
-        self.logger.info(f"Content to be extracted: \n%s", content)
+    async def _extract_data(self, item: dict):
+        combined_content = f"Title: {item.get("title")}\nContent:\n{item.get("content")}"
+        self.logger.info(f"Content to be extracted: \n%s", combined_content)
         
-        resp = self.client.create(
+        resp = await self.client.create(
             model=self.model_name,
             messages=[
                 {
                     "role": "user",
-                    "content": f"Extract the information from the content: \n{content}",
+                    "content": f"Extract the information from the content: \n{combined_content}",
                 }
             ],
             response_model=NewsItem,
@@ -55,19 +55,22 @@ class NewsExtractor:
         
         self.logger.info(f"Start extracting data from press releases.")
         
-        semaphore = asyncio.Semaphore(6) # Tune this (3~6) based on your GPU/RAM
+        semaphore = asyncio.Semaphore(4) # Tune this (3~6) based on your GPU/RAM
         
-        async def bounded_extract(item: NewsItem):
+        async def bounded_extract(item: dict):
             async with semaphore:
                 return await self._extract_data(item=item)
 
-        tasks = [bounded_extract(item=item) for item in state.news_items]
+        tasks = [bounded_extract(item=item) for item in state.retrieved_items]
         news_infos = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Remove any exceptions
         successful = [j for j in news_infos if not isinstance(j, Exception)]
-        self.logger.info(f"Extraction completed. {len(successful)}/{len(state.news_items)} press release succeeded.")
-
+        self.logger.info(f"Extraction completed. {len(successful)}/{len(state.retrieved_items)} press release succeeded.")
+        
+        if successful:
+            self.logger.info(f"Sample Extracted Item: \n%s", successful[0])
+        
         return successful
         
 

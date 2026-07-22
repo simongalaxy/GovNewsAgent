@@ -9,7 +9,7 @@ from src.logger import Logger
 from src.States import State, NewsItem
 
 
-class NewsFetcher:
+class NewsScraper:
     def __init__(self, logger):
         self.logger = logger
         self.base_url = "http://www.info.gov.hk"

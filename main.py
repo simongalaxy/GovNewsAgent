@@ -3,10 +3,10 @@ from pprint import pformat
 
 from src.logger import Logger
 from src.States import State
-from src.NewsFetcher import NewsFetcher
+from src.NewsScraper import NewsScraper
 from src.QueryParser import QueryParser
 from src.PG_DBHandler import PG_DBHandler
-from src.NewsExtractor import NewsExtractor
+from src.DataExtractor import DataExtractor
 
 
 
@@ -17,9 +17,9 @@ def main():
     logger = Logger(__name__).get_logger()
     state = State()
     parser = QueryParser(logger=logger)
-    fetcher = NewsFetcher(logger=logger)
+    scraper = NewsScraper(logger=logger)
     dbhandler = PG_DBHandler(logger=logger)
-    extractor = NewsExtractor(logger=logger)
+    extractor = DataExtractor(logger=logger)
     
     while True:
         user_query = input("Enter the query to the Gov News or type 'q' for exit:")
@@ -36,7 +36,7 @@ def main():
         
         # # crawl all relevant news based on parsed_query.
         # if state.parsed_query.start_date is not None:
-        #     fetcher.fetch_news_by_dates(state=state)
+        #     scraper.fetch_news_by_dates(state=state)
         
         # # save news to database.
         # for item in state.news_items:
@@ -44,12 +44,10 @@ def main():
         #     dbhandler.insert_news(item=item)
         
         # retrieve the scraped news for data extraction.
-        results = dbhandler.retrieve_news_for_extracting_data(state=state)
-        logger.info(f"Total no. of news retrieved from period {state.parsed_query.start_date} to {state.parsed_query.end_date}: {len(results)}")
-        # logger.info(f"First news retrieved: \n%s", pformat(dict(results[3]), indent=2))
+        dbhandler.retrieve_news_for_extracting_data(state=state)
         
         # extract information from the news.
-        results = asyncio.run(extractor.extract_data_from_all_news(result))
+        extracted_datas = asyncio.run(extractor.extract_data_from_all_news(state=state))
         
     return
 

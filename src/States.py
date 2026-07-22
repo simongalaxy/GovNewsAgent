@@ -15,19 +15,20 @@ class NewsItem(BaseModel): # to store the news items that are relevant to the us
     content: str = Field(description="Raw Content of the press release")
     url: str = Field(description="url of the press release")
     published_date: date = Field(description="Date published the press release")
-    subject_department: str = Field(default=None, description="Subject Department/Bureau issued this press release")
-    summary: List[str] = Field(default=None, description="Summary of Press Release in bullet points with maximun 800 words")
-    category: str = Field(default=None, description="Category of Press Release, e.g. Security, Education, Health, Welfare, Public Goverance")
-    keywords: list[str] = Field(default=None, description="Maximun 5 keywords of the press release, keep original wordings")
-    content_type: Literal["Press Release", "Speech", "Response to Query"] = Field(default=None, description="Type by its content")
+    subject_department: Optional[str] = Field(description="Subject Department/Bureau issued this press release")
+    summary: Optional[List[str]] = Field(description="Summary of Press Release in bullet points with maximun 800 words")
+    category: Optional[str] = Field(description="Category of Press Release, e.g. Security, Education, Health, Welfare, Public Goverance")
+    keywords: Optional[list[str]] = Field(description="Maximun 5 keywords of the press release, keep original wordings")
+    content_type: Optional[Literal["Press Release", "Speech", "Response to Query"]] = Field(description="Type by its content")
 
 
 class State(BaseModel): # to store the overall state of the system, including the parsed query and the news items.
     original_query: str = None
-    query_embeddings: List[float] | None = None
+    # query_embeddings: List[float] = None
     parsed_query: ParsedQuery = None
     news_items: List[NewsItem] = []
-    query_results: List[dict] = []
+    retrieved_items: List[dict] = []
+    search_results: List[dict] = []
     markdown: str = None
     
 

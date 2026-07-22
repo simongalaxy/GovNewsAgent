@@ -3,7 +3,7 @@ import psycopg2
 import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from typing import List, Tuple
-
+from pprint import pformat
 
 from src.Settings import settings
 from src.logger import Logger
@@ -14,16 +14,7 @@ class PG_DBHandler:
     def __init__(self, logger: Logger):
         # logger settings.
         self.logger = logger
-        
-        # local postgresql db settings.
-        # self.username = settings.username
-        # self.password = settings.password
-        # self.host = settings.host
-        # self.port = settings.port
-        # self.db_name = settings.db_name
-        # self.conn_str = f"postgresql://{self.username}:{self.password}@{self.host}:{self.port}/{self.db_name}"
-        # self.embedding_dim = 1024
-        
+         
         # neon database settings.
         self.conn_str = settings.neon_connection_str
         self.db_name = settings.pgdatabase
@@ -126,10 +117,10 @@ class PG_DBHandler:
 
                 if row:
                     inserted_id = row["id"]
-                    self.logger.debug(f"Inserted news with id - {inserted_id}")
+                    self.logger.info(f"Inserted news with id - {inserted_id}")
                     return inserted_id
                 else:
-                    self.logger.warning(f"No row returned for news with id - {item.id}")
+                    self.logger.info(f"No row returned for news with id - {item.id}")
                     return None
 
         except Exception as e:
@@ -181,7 +172,7 @@ class PG_DBHandler:
             # raise  
             return None
     
-    def retrieve_news_for_extracting_data(self, state: State) -> tuple[str, List]:
+    def retrieve_news_for_extracting_data(self, state: State) -> None:
         base = """
             SELECT
                 id,
@@ -218,9 +209,12 @@ class PG_DBHandler:
         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params)
             rows = cur.fetchall()
-            self.logger.info("Fetched %d rows", len(rows))
+            state.retrieved_items = [dict(row) for row in rows]
+            self.logger.info(f"Total no. of news retrieved from period {state.parsed_query.start_date} to {state.parsed_query.end_date}: {len(state.retrieved_items)}")
+            self.logger.info(f"First retrieved news: \n%s", pformat(state.retrieved_items[0], indent=2))
+            self.logger.info(f"DataType of retreived news: {type(state.retrieved_items[0])}")
             
-            return rows
+            return
         
     #  Build a dynamic SQL query string based on the values present in ParsedQuery, Returns (sql_string, params_list).
 #     def _build_news_query(self, state: State) -> tuple[str, list]:
