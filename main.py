@@ -47,7 +47,7 @@ def main():
         dbhandler.retrieve_news_for_extracting_data(state=state)
         
         # extract information from the news.
-        extracted_datas = asyncio.run(extractor.extract_data_from_all_news(state=state))
+        asyncio.run(extractor.extract_data_from_all_news(state=state))
         
     return
 

@@ -7,7 +7,7 @@ from pprint import pformat
 
 from src.Settings import settings
 from src.logger import Logger
-from src.States import NewsItem, ParsedQuery, State
+from src.States import NewsItem, ParsedQuery, State, ExtractedData
 
 
 class PG_DBHandler:
@@ -131,7 +131,7 @@ class PG_DBHandler:
 
 
     # update the records in database with extracted job information to respective job accordingly.
-    def update_news(self, item: NewsItem) -> str | None:
+    def update_news(self, item: ExtractedData) -> str | None:
         update_query = """UPDATE GovNews SET
             subject_department = %s,
             summary = %s,
@@ -171,6 +171,7 @@ class PG_DBHandler:
             # Do NOT raise here if you want the pipeline to continue
             # raise  
             return None
+    
     
     def retrieve_news_for_extracting_data(self, state: State) -> None:
         base = """

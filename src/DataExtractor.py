@@ -3,13 +3,13 @@ import json
 import asyncio
 import instructor
 from openai import AsyncOpenAI
-# from openai import OpenAI
 from pprint import pformat
+from typing import List
 
 
 from src.logger import Logger
 from src.Settings import settings
-from src.States import State, NewsItem
+from src.States import State, ExtractedData
 
 
 class DataExtractor:
@@ -30,9 +30,10 @@ class DataExtractor:
         )
 
 
-    async def _extract_data(self, item: dict):
-        combined_content = f"Title: {item.get("title")}\nContent:\n{item.get("content")}"
-        self.logger.info(f"Content to be extracted: \n%s", combined_content)
+    async def _extract_data(self, item: dict) -> ExtractedData:
+        id = item.get("id")
+        combined_content = f"Title:\n{item.get("title")}\nContent:\n{item.get("content")}"
+        self.logger.info(f"Content to be extracted for id - {id}: \n%s", combined_content)
         
         resp = await self.client.create(
             model=self.model_name,
@@ -42,16 +43,17 @@ class DataExtractor:
                     "content": f"Extract the information from the content: \n{combined_content}",
                 }
             ],
-            response_model=NewsItem,
+            response_model=ExtractedData,
         )
-
+        
+        resp["id"] = id
         metadata = resp.model_dump_json(indent=2)
-        self.logger.info(f"News item: \n%s", pformat(metadata, indent=2))
+        self.logger.info(f"Extracted item: \n%s", pformat(metadata, indent=2))
 
-        return metadata
+        return resp
     
         
-    async def extract_data_from_all_news(self, state: State):
+    async def extract_data_from_all_news(self, state: State) -> List[ExtractedData]:
         
         self.logger.info(f"Start extracting data from press releases.")
         
@@ -59,18 +61,18 @@ class DataExtractor:
         
         async def bounded_extract(item: dict):
             async with semaphore:
-                return await self._extract_data(item=item)
+                return await self._extract_data(item = item)
 
         tasks = [bounded_extract(item=item) for item in state.retrieved_items]
-        news_infos = await asyncio.gather(*tasks, return_exceptions=True)
+        extracted_infos = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Remove any exceptions
-        successful = [j for j in news_infos if not isinstance(j, Exception)]
+        successful = [j for j in extracted_infos if not isinstance(j, Exception)]
         self.logger.info(f"Extraction completed. {len(successful)}/{len(state.retrieved_items)} press release succeeded.")
         
         if successful:
             self.logger.info(f"Sample Extracted Item: \n%s", successful[0])
-        
+
         return successful
         
 
