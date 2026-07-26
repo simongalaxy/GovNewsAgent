@@ -35,12 +35,21 @@ class DataExtractor:
         combined_content = f"Title:\n{item.get("title")}\nContent:\n{item.get("content")}"
         self.logger.info(f"Content to be extracted for id - {id}: \n%s", combined_content)
         
+        prompt = f"""
+        Extract the informatio from the content and strictly follow the rule below:
+        
+        content: \n{content}\n
+        
+        rules:
+        Categorize the content type. You must strictly output one of these exact strings: 'Press Release', 'Speech', or 'Response to Query'. Do not use lowercase or snake_case formats like 'press_release'."
+        """
+        
         resp = await self.client.create(
             model=self.model_name,
             messages=[
                 {
                     "role": "user",
-                    "content": f"Extract the information from the content: \n{combined_content}",
+                    "content": prompt,
                 }
             ],
             response_model=ExtractedData,
