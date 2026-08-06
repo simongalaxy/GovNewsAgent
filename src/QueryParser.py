@@ -1,9 +1,10 @@
 import instructor
 from openai import OpenAI
+from pprint import pformat
 
 from src.Settings import settings
 from src.logger import Logger
-from src.States import ParsedQuery
+from src.States import ParsedQuery, State
 
 class QueryParser:
     def __init__(self, logger: Logger):
@@ -23,7 +24,7 @@ class QueryParser:
         )
     
     
-    def parse_query(self, query: str) -> ParsedQuery:
+    def parse_query(self, state: State):
         self.logger.info("Start parsing information from query.")
         
         system_instruction = (
@@ -35,7 +36,7 @@ class QueryParser:
         user_prompt = f"""
         Extract entities from the user query.
         
-        User Query: "{query}"
+        User Query: "{state.original_query}"
         
         Filtering Rules:
         - Do not include action verbs (like 'news', 'summarize', 'scrape', 'all') in keywords.
@@ -53,7 +54,7 @@ class QueryParser:
             response_model=ParsedQuery, 
         ) 
 
-        parsed_query_json = resp.model_dump_json(indent=2)
-        self.logger.info(f"Parsed Query: \n%s", parsed_query_json)
+        state.parsed_query= resp.model_validate(resp)
+        self.logger.info(f"Parsed Query: \n%s", pformat(state.parsed_query.model_dump(by_alias=True), indent=2))
         
         return resp

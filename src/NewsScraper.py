@@ -16,13 +16,14 @@ class NewsScraper:
     
     
     # function to generate links based on the date range.
-    def _generate_date_urls(self, startDate: str, endDate: str) -> list[str]:
+    # def _generate_date_urls(self, startDate: str, endDate: str) -> list[str]:
+    def _generate_date_urls(self, state: State) -> None:
         # transform the dates from string to datetime format.
-        start_date = datetime.strptime(startDate, "%Y-%m-%d")
-        if endDate == "":
+        start_date = datetime.strptime(state.parsed_query.start_date, "%Y-%m-%d")
+        if state.parsed_query.end_date == "":
             end_date = start_date
         else:
-            end_date = datetime.strptime(endDate, "%Y-%m-%d")
+            end_date = datetime.strptime(state.parsed_query.end_date, "%Y-%m-%d")
         self.logger.info(f"Start date: {start_date}, End Date: {end_date}")
         
         dates = []
@@ -30,17 +31,17 @@ class NewsScraper:
         while current <= end_date:
             dates.append(current.strftime("%Y%m%d"))
             current += timedelta(days=1)
+        state.dates = dates
+        self.logger.info(f"Generated date range from {state.parsed_query.start_date} to {state.parsed_query.end_date}: {state.dates}")
         
-        self.logger.info(f"Generated date range from {startDate} to {endDate}: {dates}")
+        state.date_urls = [f"{self.base_url}/gia/general/{date[:-2]}/{date[-2:]}.htm" for date in dates]
+        self.logger.info(f"Generated {len(state.date_urls)} date URLs:")
         
-        urls = [f"{self.base_url}/gia/general/{date[:-2]}/{date[-2:]}.htm" for date in dates]
-        self.logger.info(f"Generated {len(urls)} date URLs:")
-        
-        for i, url in enumerate(urls, start=1):
+        for i, url in enumerate(state.date_urls, start=1):
             self.logger.info(f"No. {i}: {url}\n")
         self.logger.info("-"*50)
         
-        return urls
+        return
     
     
     # functions to parse links and content from poges.
@@ -77,9 +78,10 @@ class NewsScraper:
             published_date=published_date,
             title=title,
             content=content,
-            url=str(url)
+            url=str(url),
+            extracted_data=None
         )
-        self.logger.info("Fetched news item: \n%s", pformat(item.model_dump(by_alias=True), indent=4))
+        # self.logger.info("Fetched news item: \n%s", pformat(item.model_dump(by_alias=True), indent=4))
         
         return item
 
@@ -111,24 +113,27 @@ class NewsScraper:
     def fetch_news_by_dates(self, state: State) -> None:
         
         # Generate the urls by date range.
-        urls = self._generate_date_urls(
-            startDate=state.parsed_query.start_date, 
-            endDate=state.parsed_query.end_date
-        )
+        # state.date_urls = self._generate_date_urls(
+        #     startDate=state.parsed_query.start_date, 
+        #     endDate=state.parsed_query.end_date
+        # )
+        
+        self._generate_date_urls(state=state)
         
         # fetch news URLs from each date page asynchronously.
-        news_urls = asyncio.run(self._fetch_all_pages(urls=urls, fetch_function=self._fetch_date_page))
-        self.logger.info(f"Total {len(news_urls)} news URLs fetched from date pages.")
+        state.news_urls = asyncio.run(self._fetch_all_pages(urls=state.date_urls, fetch_function=self._fetch_date_page))
+        self.logger.info(f"Total {len(state.news_urls)} news URLs fetched from {len(state.date_urls)} date pages.")
         
         # fetch news items from each news page asynchronously.
         all_items = []
-        for i, urls in enumerate(news_urls, start=1):
-            self.logger.info(f"Fetching news page {i}/{len(news_urls)}: {urls}")
+        for i, urls in enumerate(state.news_urls, start=1):
+            self.logger.info(f"Fetching news page {i}/{len(state.news_urls)}: {urls}")
             news_items = asyncio.run(self._fetch_all_pages(urls=urls, fetch_function=self._fetch_news_page))
             all_items.extend(news_items)
-
-        self.logger.info(f"Total {len(all_items)} news items were fetched from {len(urls)} date pages.")
+        
         state.news_items = all_items
+        self.logger.info(f"Total {len(state.news_items)} news items were fetched and saved to State.")
+        self.logger.info(f"Sample news item saved in State: \n%s", pformat(state.news_items[0].model_dump(by_alias=True), indent=4))
         
         return
     

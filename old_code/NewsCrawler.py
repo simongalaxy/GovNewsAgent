@@ -7,7 +7,7 @@ import asyncio, re
 from typing import List
 
 from src.logger import Logger
-from src.States import State
+from src.States import State, NewsItem
 
 class NewsCrawler:
     def __init__(self, logger: Logger):
@@ -127,11 +127,11 @@ class NewsCrawler:
         news_links = self._consolidate_news_urls(results=date_page_results)
         
         # get the data dictionaries from press releases and save results to chromadb.
-        state.news_page_results = asyncio.run(self._crawl_pages(urls=news_links, config=self.crawl_config_newsPage))
+        state.news_items = asyncio.run(self._crawl_pages(urls=news_links, config=self.crawl_config_newsPage))
         
         # log the crawling results for debugging and verification.
-        self.logger.info(f"Crawling completed. Total news items retrieved: {len(state.news_page_results)}")
-        for idx, result in enumerate(state.news_page_results, start=1):
+        self.logger.info(f"Crawling completed. Total news items retrieved: {len(state.news_items)}")
+        for idx, result in enumerate(state.news_items, start=1):
             self.logger.info(f"News Item {idx}:")
             self.logger.info(f"Title: {result.metadata["title"]}") 
             self.logger.info(f"Content: \n%s", result.markdown)

@@ -6,7 +6,6 @@ dist/
 wheels/
 *.egg-info
 logs/
-chroma_news_db/
 reports/
 
 
