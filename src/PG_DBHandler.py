@@ -92,7 +92,7 @@ class PG_DBHandler:
         INSERT INTO GovNews (
             id, title, content, url, published_date, subject_department, summary, category, keywords
         )
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (id) DO UPDATE SET
             title = EXCLUDED.title,
             content = EXCLUDED.content,
@@ -101,7 +101,7 @@ class PG_DBHandler:
             subject_department = EXCLUDED.subject_department,
             summary = EXCLUDED.summary,
             category = EXCLUDED.category,
-            keywords = EXCLUDED.keywords,
+            keywords = EXCLUDED.keywords
         RETURNING id;
         """
 

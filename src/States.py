@@ -24,16 +24,6 @@ class NewsItem(BaseModel): # to store the news items that are relevant to the us
     published_date: date = Field(description="Date published the press release")
     extracted_data: ExtractedData | None = Field(description="Extracted data from the press release, if available")
     
-<<<<<<< HEAD
-=======
-class ExtractedData(BaseModel):
-    id: str | None = Field(description="ID of the press release")
-    subject_department: str = Field(description="Subject Department/Bureau issued this press release")
-    summary: str = Field(description="Summary of Press Release")
-    category: str = Field(description="Category of Press Release, e.g. Security, Education, Health, Welfare, Public Goverance")
-    keywords: list[str] = Field(description="Maximun 5 keywords of the press release, keep original wordings")
-    content_type: Literal["Press Release", "Speech", "Response to Query"]
->>>>>>> 100d9e60b468f35c1092feffbb40bba8e8f6f614
 
 class State(BaseModel): # to store the overall state of the system, including the parsed query and the news items.
     original_query: str = None

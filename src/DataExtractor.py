@@ -32,19 +32,14 @@ class DataExtractor:
 
     async def _extract_data(self, item: NewsItem):
         
-<<<<<<< HEAD
         combined_content = f"Title:\n{item.title}\nContent:\n{item.content}"
-=======
         prompt = f"""
         Extract the informatio from the content and strictly follow the rule below:
         
-        content: \n{content}\n
+        content: \n{combined_content}\n
         
-        rules:
-        Categorize the content type. You must strictly output one of these exact strings: 'Press Release', 'Speech', or 'Response to Query'. Do not use lowercase or snake_case formats like 'press_release'."
         """
         
->>>>>>> 100d9e60b468f35c1092feffbb40bba8e8f6f614
         resp = await self.client.create(
             model=self.model_name,
             messages=[
