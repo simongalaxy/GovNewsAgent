@@ -78,7 +78,7 @@ class PG_DBHandler:
         return
 
     # ---------------------------------------------------------
-    # Insert or update a news article
+    # upsert a news article
     # ---------------------------------------------------------
    
     # just add raw data of job info to database.
@@ -126,7 +126,7 @@ class PG_DBHandler:
             return None
 
 
-    def query_full_text_search(self, parsed_query: ParsedQuery) -> None:
+    def query_full_text_search(self, parsed_query: ParsedQuery) -> List[dict]:
         base = """
             SELECT
                 id,
@@ -153,16 +153,30 @@ class PG_DBHandler:
         
         # build tsquery string
         # 1. Departments.
-        depts = [f"({item.replace(" ", " <-> ")})" for item in parsed_query.departments]
-        tsquery_depts = " | ".join(depts)
-        self.logger.info(f"tsquery_depts: {tsquery_depts}")
-        
-        # 2. keywords.
-        keywords = [f"({item.replace(" ", " <-> ")})" for item in parsed_query.keywords]
-        tsquery_keywords = " | ".join(keywords)
-        self.logger.info(f"tsquery_keywords: {tsquery_keywords}")
+        if parsed_query.departments:
+            depts = [f"({item.replace(" ", " <-> ")})" for item in parsed_query.departments]
+            tsquery_depts = " | ".join(depts)
+            self.logger.info(f"tsquery_depts: {tsquery_depts}")
+        else:
+            tsquery_depts = None
 
-        tsquery = f"({tsquery_depts}) & ({tsquery_keywords})"
+        # 2. keywords.
+        if parsed_query.keywords:
+            keywords = [f"({item.replace(" ", " <-> ")})" for item in parsed_query.keywords]
+            tsquery_keywords = " | ".join(keywords)
+            self.logger.info(f"tsquery_keywords: {tsquery_keywords}")
+        else:
+            tsquery_keywords = None
+
+        if tsquery_depts and tsquery_keywords:
+            tsquery = f"({tsquery_depts}) & ({tsquery_keywords})"
+        elif tsquery_depts:
+            tsquery = tsquery_depts
+        elif tsquery_keywords:
+            tsquery = tsquery_keywords
+        else:
+            tsquery = None
+
         # keyword Full Text Search filter
         if tsquery:
             where_clauses.append("to_tsvector('english', content) @@ to_tsquery('english', %s)")
@@ -183,81 +197,7 @@ class PG_DBHandler:
             rows = cur.fetchall()
             search_results = [dict(row) for row in rows]
             for i, item in enumerate(search_results, start=1):
+                self.logger.info(f"Data Type of item: {type(item)}")
                 self.logger.info(f"Query Search Result No.: {i}/{len(search_results)} - /n%s", pformat(item, indent=4))
-            return
 
-
-
-# old code for reference, not to be used:
-    #  Build a dynamic SQL query string based on the values present in ParsedQuery, Returns (sql_string, params_list).
-#     def _build_news_query(self, state: State) -> tuple[str, list]:
-
-#         base = """
-#             SELECT
-#                 published_date,
-#                 title,
-#                 content
-#             FROM news
-#         """
-        
-#         where_clauses = []
-#         params = []
-
-#         # date range
-#         if state.parsed_query.start_date and state.parsed_query.end_date:
-#             where_clauses.append("published_date BETWEEN %s AND %s")
-#             params.append(state.parsed_query.start_date)
-#             params.append(state.parsed_query.end_date)
-#         elif state.parsed_query.start_date or state.parsed_query.end_date:
-#             where_clauses.append("published_date = %s")
-#             params.append(state.parsed_query.start_date)
-#         else:
-#             pass
-
-#         # build tsquery string
-#         if state.parsed_query.keywords:
-#             tsquery = " | ".join(state.parsed_query.keywords)
-#         else:
-#             tsquery = None
-            
-#         # keyword Full Text Search filter
-#         if tsquery:
-#             where_clauses.append("tsv @@ plainto_tsquery('english', %s)")
-#             params.append(tsquery)
-
-
-#         # --- Assemble WHERE clause ---
-#         where_sql = ""
-#         if where_clauses:
-#             where_sql = " WHERE " + " AND ".join(where_clauses)
-#         else:
-#             where_sql = ""
-
-#         # --- Final SQL ---
-#         sql = base + where_sql + " ORDER BY published_date ASC;"
-        
-#         return sql, params
-
-#    # ---------------------------------------------------------
-#     # search news: keyword + date filter
-#     # ---------------------------------------------------------
-#     def search_news(self, state: State) -> List[dict]:
-
-#         """Perform a full text search combining keyword relevance, vector similarity, and date filtering."""
-#         sql, params = self._build_news_query(state=state)
-
-#         try:
-#             with psycopg.connect(self.conn_str, row_factory=dict_row) as conn:
-#                 with conn.cursor() as cur:
-#                     self.logger.info("Executing SQL: \n%s", sql)
-#                     self.logger.info("Params: %s", params)
-                    
-#                     cur.execute(sql, params)
-#                     rows = cur.fetchall()
-#                     self.logger.info("Fetched %d rows", len(rows))
-                    
-#                     return rows
-        
-#         except Exception as e:
-#             self.logger.error(f"Database query failed: {e}")
-#             return []
+            return search_results

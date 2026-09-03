@@ -36,18 +36,12 @@ async def main():
                     dbhandler.upsert_news(item=item)
                 logger.info(f"Main Pipeline: Saved {len(news_batch)} items to DB.")
 
-        # # # save news to database.
-        # logger.info(f"Start saving total {len(state.news_items)} to database.")
-        # for item in state.news_items:
-        #     # logger.info(f"Scraped News: \n{pformat(item.model_dump())}\n")
-        #     dbhandler.insert_news(item=item)
-        
-        
         # retrieve the scraped news for data extraction.
-        # dbhandler.retrieve_news_for_extracting_data(state=state)
-        
+        search_results = dbhandler.query_full_text_search(parsed_query=parsed_query)
+
+        # Generate summary in markdown format.
+        summary = await agent.generate_summary(search_results=search_results, parsed_query=parsed_query)
        
-        
     return
 
 if __name__ == "__main__":
