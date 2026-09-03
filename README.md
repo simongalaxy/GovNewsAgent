@@ -77,22 +77,19 @@ This enables analysts, researchers, and government teams to quickly understand w
 ## 📁 Project Structure
 
 GovNewsAgent/
-│
 ├── src/
 │   ├── __init__.py
-│   ├── DataClasses.py        # Pydantic Classes for parsed query, news items
-│   ├── LLMAgent.py           # LLM-based query parsing and generate markdown summary
-│   ├── NewsScraper.py        # Async news crawler
-│   ├── PG_DBHandler.py       # PostgreSQL storage and queries
-│   ├── logger.py             # Logging utilities
-│   └── Settings.py           # Extract the settings parameters.
-│
-├── main.py                   # Main entry point
-├── .env                      # Environment variables
+│   ├── DataClasses.py
+│   ├── LLMAgent.py
+│   ├── NewsScraper.py
+│   ├── PG_DBHandler.py
+│   ├── logger.py
+│   ├── Settings.py
+│   └── main.py       # 🚀 移到這裡，成為真正的專案主進入點
+├── .env
 ├── pyproject.toml
 ├── uv.lock
 └── README.md
-
 
 ---
 
