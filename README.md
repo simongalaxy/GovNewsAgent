@@ -1,6 +1,6 @@
 # Government News Summary Agent
 
-An LLM‑powered, fully automated news‑intelligence pipeline that crawls government websites, extracts structured data, generates embeddings, and produces clean Markdown summaries — all without manual reading.
+An LLM‑powered, fully automated news‑intelligence pipeline that crawls government websites, extracts structured data and produces clean Markdown summaries — all without manual reading.
 
 ---
 
@@ -20,7 +20,7 @@ This project solves that by combining:
 
 - High‑performance async crawling
 - LLM‑powered extraction + summarization
-- Full Text search/Hybrid search (later) (keyword + vector)
+- Full Text search in Postgresql
 - Automated Markdown report generation
 
 The result: a fully automated government news intelligence system.
@@ -30,11 +30,11 @@ The result: a fully automated government news intelligence system.
 
 The system converts raw HTML news pages into structured, queryable data, including:
 
-- News ID
+- id
+- Published_date
 - Title
-- Full content
+- Content
 - URL
-- Embeddings (for semantic + hybrid search)
 
 Then, using LLMs, it generates media summaries tailored to the user’s request — grouped by:
 - Topic
@@ -52,15 +52,17 @@ This enables analysts, researchers, and government teams to quickly understand w
 - Extracts clean text from government news pages 
 (“High‑performance crawler for large‑scale scraping”)
 
-### 🦙 Ollama
+### 🦙 Ollama (Local/Cloud)
 - Local LLM inference for privacy + zero cost
-- Handles query parsing, extraction, embeddings, and summarization
-(“Runs LLMs locally for privacy, speed, and zero cost”)
+- Handles query parsing, extraction and summarization
+(“Runs LLMs locally for speed, and zero cost”)
 
-### 🐘 PostgreSQL and PGvector
+### 🐘 PostgreSQL
 - Stores structured news
-- Embedding search + hybrid search
-(“Stores embeddings for semantic search… performs hybrid search”)
+- Full Text search
+
+### Instructor
+-  provides type-safe data extraction with automatic validation, retries, and streaming support.
 
 ### 🧩 Pydantic
 - Strict schema validation
@@ -76,15 +78,14 @@ This enables analysts, researchers, and government teams to quickly understand w
 
 GovNewsAgent/
 │
-├── tools/
+├── src/
 │   ├── __init__.py
-│   ├── States.py             # Pydantic models for parsing queries and storing news items
-│   ├── QueryParser.py        # LLM-based query parsing
-│   ├── NewsFetcher.py        # Async news crawler
-│   ├── PGVectorNewsStore.py  # PostgreSQL + PGvector storage and queries
+│   ├── DataClasses.py        # Pydantic Classes for parsed query, news items
+│   ├── LLMAgent.py           # LLM-based query parsing and generate markdown summary
+│   ├── NewsScraper.py        # Async news crawler
+│   ├── PG_DBHandler.py       # PostgreSQL storage and queries
 │   ├── logger.py             # Logging utilities
-│   ├── ContentEmbedder.py    # Embedding generation
-│   └── ReportGenerator.py    # Generate final news summaries in Markdown files
+│   └── Settings.py           # Extract the settings parameters.
 │
 ├── main.py                   # Main entry point
 ├── .env                      # Environment variables
@@ -98,12 +99,11 @@ GovNewsAgent/
 ## 🚀 How It Works
 
 1. **Parse user request (topics, date range, departments)** using LLMs
-2. **Crawl Government news webpages** using Crawl4AI
+2. **Crawl Government news webpages** using Aiohttp and Beautifulsoup
 3. **Extract structured fields (title, content, URL, etc.)**
-4. **Generate embeddings** using a local LLM (via Ollama)
-5. **Store data + embeddings** in PostgreSQL with PGvector
-6. **Perform full-text/Hybrid search** to retrieve relevant articles
-7. **Generate a clean, structured media summary** in Markdown
+4. **Store data** in PostgreSQL
+5. **Perform full-text search** to retrieve relevant articles
+6. **Generate a clean, structured media summary** in Markdown using LLMs
 
 The result is a fully automated, end‑to‑end system for government news intelligence.
 ---
@@ -121,8 +121,6 @@ uv sync
 ## Set up your .env file:
 POSTGRES_URL=your_postgres_connection_string
 ollama_llm_model=llama3.2:3b
-ollama_embedding_model=bge-m3:latest
-ollama_extraction_model=phi4-mini:latest
 
 ## Usage
 uv run main.py
