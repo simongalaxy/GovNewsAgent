@@ -5,10 +5,9 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from typing import List, Tuple
 from pprint import pformat
 
-from src.Settings import settings
-from src.logger import Logger
-from src.States import NewsItem, ParsedQuery, State, ExtractedData
-
+from src.Util.Settings import settings
+from src.Util.logger import Logger
+from src.Data.DataClasses import NewsItem, ParsedQuery
 
 class PG_DBHandler:
     def __init__(self, logger: Logger):
@@ -29,7 +28,7 @@ class PG_DBHandler:
         self._ensure_database_exists()
         self._create_table()
 
-
+    # check whether the database exists.
     def _ensure_database_exists(self) -> None:
         """
         Check if a PostgreSQL database exists. 
@@ -53,19 +52,17 @@ class PG_DBHandler:
 
         return
 
-    
+    # create table when needed.
     def _create_table(self) -> None:
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS GovNews (
+        CREATE EXTENSION IF NOT EXISTS vector;
+        
+        CREATE TABLE IF NOT EXISTS GovPressReleases (
             id TEXT UNIQUE NOT NULL,
             title TEXT NOT NULL,
             content TEXT,
             url TEXT NOT NULL,
             published_date DATE,
-            subject_department TEXT[],
-            summary TEXT[],
-            category TEXT,
-            keywords TEXT[],
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         );
@@ -84,24 +81,20 @@ class PG_DBHandler:
     # Insert or update a news article
     # ---------------------------------------------------------
    
-     # just add raw data of job info to database.
-    def insert_news(self, item: NewsItem) -> str | None:
+    # just add raw data of job info to database.
+    def upsert_news(self, item: NewsItem) -> None:
         
         """Insert or update a news item. Returns the id on success."""
         insert_query = """
-        INSERT INTO GovNews (
-            id, title, content, url, published_date, subject_department, summary, category, keywords
+        INSERT INTO GovPressReleases (
+            id, title, content, url, published_date
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (id) DO UPDATE SET
             title = EXCLUDED.title,
             content = EXCLUDED.content,
             url = EXCLUDED.url,
-            published_date = EXCLUDED.published_date,
-            subject_department = EXCLUDED.subject_department,
-            summary = EXCLUDED.summary,
-            category = EXCLUDED.category,
-            keywords = EXCLUDED.keywords
+            published_date = EXCLUDED.published_date
         RETURNING id;
         """
 
@@ -110,11 +103,7 @@ class PG_DBHandler:
             item.title,
             item.content,
             item.url,
-            item.published_date,
-            item.extracted_data.subject_department,
-            item.extracted_data.summary,
-            item.extracted_data.category,
-            item.extracted_data.keywords
+            item.published_date
         )
 
         try:
@@ -137,72 +126,47 @@ class PG_DBHandler:
             return None
 
 
-    # update the records in database with extracted job information to respective job accordingly.
-    # def update_news(self, item: ExtractedData) -> str | None:
-    #     update_query = """UPDATE GovNews SET
-    #         subject_department = %s,
-    #         summary = %s,
-    #         category = %s,
-    #         keywords = %s,
-    #         content_type = %s,
-    #         updated_at = NOW()
-    #     WHERE id = %s
-    #     RETURNING id;
-    #     """
-
-    #     # Note that job_item.id moves to the VERY END of the tuple to match the WHERE clause
-    #     values = (
-    #         item.subject_department,
-    #         item.summary,
-    #         item.category,
-    #         item.keywords,
-    #         item.content_type,
-    #         item.id, 
-    #     )
-
-    #     try:
-    #         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-    #             cur.execute(update_query, values)
-    #             row = cur.fetchone()
-
-    #             if row:
-    #                 inserted_id = row["id"]
-    #                 self.logger.info(f"Inserted/Updated news_id - {inserted_id}")
-    #                 return inserted_id
-    #             else:
-    #                 self.logger.info(f"No row returned for news id - {item.id}")
-    #                 return None
-
-    #     except Exception as e:
-    #         self.logger.error(f"Error inserting job {item.id}: {e}")
-    #         # Do NOT raise here if you want the pipeline to continue
-    #         # raise  
-    #         return None
-    
-    
-    def retrieve_news_for_extracting_data(self, state: State) -> None:
+    def query_full_text_search(self, parsed_query: ParsedQuery) -> None:
         base = """
             SELECT
                 id,
                 published_date,
                 title,
-                content
-            FROM GovNews
+                content,
+                url
+            FROM GovPressReleases
         """
         
         where_clauses = []
         params = []
 
-        # date range
-        if state.parsed_query.start_date and state.parsed_query.end_date:
+        # date range.
+        if parsed_query.start_date and parsed_query.end_date:
             where_clauses.append("published_date BETWEEN %s AND %s")
-            params.append(state.parsed_query.start_date)
-            params.append(state.parsed_query.end_date)
-        elif state.parsed_query.start_date or state.parsed_query.end_date:
+            params.append(parsed_query.start_date)
+            params.append(parsed_query.end_date)
+        elif parsed_query.start_date or parsed_query.end_date:
             where_clauses.append("published_date = %s")
-            params.append(state.parsed_query.start_date)
+            params.append(parsed_query.start_date)
         else:
             pass
+        
+        # build tsquery string
+        # 1. Departments.
+        depts = [f"({item.replace(" ", " <-> ")})" for item in parsed_query.departments]
+        tsquery_depts = " | ".join(depts)
+        self.logger.info(f"tsquery_depts: {tsquery_depts}")
+        
+        # 2. keywords.
+        keywords = [f"({item.replace(" ", " <-> ")})" for item in parsed_query.keywords]
+        tsquery_keywords = " | ".join(keywords)
+        self.logger.info(f"tsquery_keywords: {tsquery_keywords}")
+
+        tsquery = f"({tsquery_depts}) & ({tsquery_keywords})"
+        # keyword Full Text Search filter
+        if tsquery:
+            where_clauses.append("to_tsvector('english', content) @@ to_tsquery('english', %s)")
+            params.append(tsquery)
         
         #--- Assemble WHERE clause ---
         where_sql = ""
@@ -217,13 +181,14 @@ class PG_DBHandler:
         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(sql, params)
             rows = cur.fetchall()
-            state.retrieved_items = [dict(row) for row in rows]
-            self.logger.info(f"Total no. of news retrieved from period {state.parsed_query.start_date} to {state.parsed_query.end_date}: {len(state.retrieved_items)}")
-            self.logger.info(f"First retrieved news: \n%s", pformat(state.retrieved_items[0], indent=2))
-            self.logger.info(f"DataType of retreived news: {type(state.retrieved_items[0])}")
-            
+            search_results = [dict(row) for row in rows]
+            for i, item in enumerate(search_results, start=1):
+                self.logger.info(f"Query Search Result No.: {i}/{len(search_results)} - /n%s", pformat(item, indent=4))
             return
-        
+
+
+
+# old code for reference, not to be used:
     #  Build a dynamic SQL query string based on the values present in ParsedQuery, Returns (sql_string, params_list).
 #     def _build_news_query(self, state: State) -> tuple[str, list]:
 

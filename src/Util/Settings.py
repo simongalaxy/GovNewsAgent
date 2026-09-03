@@ -10,17 +10,7 @@ class Settings(BaseSettings):
     # logger settings.
     log_path: str
     log_level: str
-    
-    # folder paths for reports.
-    report_path: str
-    
-    # localhost database settings.
-    username: str
-    password: str
-    host: str
-    port: str
-    db_name: str
-    
+        
     # neon connection string.
     neon_connection_str: str
     pgdatabase: str
@@ -29,11 +19,6 @@ class Settings(BaseSettings):
     ollama_api_key: str
     ollama_base_url: str
     ollama_cloud_model: str
-    
-    # ollama local llm settings.
-    ollama_extraction_model: str
-    ollama_map_model: str
-    ollama_reduce_model: str
 
     # pydantic settings config.
     model_config = SettingsConfigDict(
