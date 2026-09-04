@@ -2,6 +2,7 @@ import os
 import json
 import asyncio
 import instructor
+from datetime import datetime
 from openai import AsyncOpenAI
 from pprint import pformat
 from typing import List, Any, Dict
@@ -35,13 +36,13 @@ class LLMAgent:
         self.original_query = None
         self.parsed_query = None
         self.extracted_datas = None
-        self.summary = None
 
         # summary report path settings.
         self.summary_report_path = settings.summary_report_path
 
         # Create log folder if it doesn't exist
         self._create_folder()
+
         
     # methods for report generation.
     def _create_folder(self):
@@ -93,9 +94,8 @@ class LLMAgent:
     async def parse_query(self, original_query: str) -> ParsedQuery:
         self.logger.info("Start parsing information from query.")
         
-        system_instruction = (
-            "You are a precise data extraction assistant. Your job is to extract search parameters, timeframes, organizations, and intended actions from the user's request."
-        )
+        system_instruction = """
+        You are a precise data extraction assistant. Your job is to extract search parameters, timeframes, organizations, and intended actions from the user's request."""
 
         user_prompt = f"""
         Extract the following keys from User Query:
@@ -128,7 +128,7 @@ class LLMAgent:
         return parsed_query
 
 
-    async def generate_summary(self, search_results: List[dict], parsed_query: ParsedQuery) -> None:
+    async def generate_summary(self, search_results: List[dict]) -> None:
         self.logger.info("Start generating summary from search results.")
         
         # prepare the documents from search results in pgvector.
@@ -149,7 +149,7 @@ class LLMAgent:
 
         user_prompt = f"""Below are the full texts of multiple government news articles related to the query.
 
-        Articles (in no particular order):
+        Articles:
         {articles}
 
         Please create a comprehensive **Media Summary Report** with the following requirements:
@@ -174,19 +174,25 @@ class LLMAgent:
 
         Write the complete report now."""
 
-        summary = await self._call_llm(
-            model=self.model_name,
-            messages=[
-                { "role": "system", "content": system_prompt },
-                { "role": "user", "content": user_prompt }
-            ],
-            response_model=str,
-            timeout=15.0,
-            max_retries=3
-        )
-        self._write_report(markdown=summary)
-        self.logger.info("#"*50)
-        self.logger.info(f"Generated Summary: \n%s", summary)
-        self.logger.info("#"*50)
+        try:
+            # ⚡️ FIX: Bypass instructor processing entirely for raw text extraction
+            # We access the raw async client via .client attribute underneath instructor
+            response = await self.client.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    { "role": "system", "content": system_prompt },
+                    { "role": "user", "content": user_prompt }
+                ],
+                timeout=30.0  # Reports can take slightly longer to stream
+            )
+            summary = response.choices[0].message.content
+            self._write_report(markdown=summary)
+            self.logger.info("#"*50)
+            self.logger.info(f"Generated Summary: \n%s", summary)
+            self.logger.info("#"*50)
+
+        except Exception as e:
+            self.logger.error(f"Unstructured summary generation failed: {e}")
+            raise e
 
         return

@@ -29,7 +29,6 @@ async def main():
         parsed_query = await agent.parse_query(original_query=original_query)
         
         # scenriario: "scrape", "search", "summarize"
-
         # Scrape all relevant news based on parsed_query.
         if parsed_query.start_date is not None and "scrape" in parsed_query.actions:
             async for news_batch in scraper.scrape_by_duration(parsed_query):
@@ -51,7 +50,7 @@ async def main():
             if search_results:
                 logger.info(f"Main Pipeline: Retrieved {len(search_results)} items from DB for data extraction.")
                 # Generate summary in markdown format.
-                summary = await agent.generate_summary(search_results=search_results, parsed_query=parsed_query)
+                summary = await agent.generate_summary(search_results=search_results)
             else:
                 logger.info("Main Pipeline: No relevant articles found in DB for the given query.")
         

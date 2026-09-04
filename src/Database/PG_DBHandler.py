@@ -209,11 +209,14 @@ class PG_DBHandler:
             cur.execute(sql, params)
             rows = cur.fetchall()
             search_results = [dict(row) for row in rows]
-            for i, item in enumerate(search_results, start=1):
-                self.logger.info(f"Data Type of item: {type(item)}")
-                self.logger.info(f"Query Search Result No.: {i}/{len(search_results)} - /n%s", pformat(item, indent=4))
+            # for i, item in enumerate(search_results, start=1):
+            #     self.logger.info(f"Data Type of item: {type(item)}")
+            #     self.logger.info(f"Query Search Result No.: {i}/{len(search_results)} - /n%s", pformat(item, indent=4))
+            self.logger.info(f"Total search results retrieved: {len(search_results)}")
+            self.logger.info(f"Third Search results: \n%s", pformat(search_results[3], indent=2))
 
             return search_results
+
 
     def export_to_excel(self, search_results: List[dict], parsed_query: ParsedQuery) -> None:  
         # Convert list of dicts to DataFrame

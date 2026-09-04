@@ -11,11 +11,8 @@ class ParsedQuery(BaseModel):
     actions: List[str] | None = Field(description="A list of specific operations or tasks requested by the user (e.g., 'scrape', 'summarize', 'download')")
 
 
-# class ExtractedData(BaseModel):
-#     id: str = Field(description="ID of the press release")
-#     subject_department: str = Field(description="Subject Department/Bureau issued this press release")
-#     summary: str = Field(description="Summary of Press Release with maximum 800 words. All specific keywords and names should be kept.")
-
+# class SummaryReport(BaseModel):
+#     markdown_content: str = Field(description="The complete generated markdown text summary report.")
     
 class NewsItem(BaseModel): # to store the news items that are relevant to the user query.
     id: str = Field(description="ID of the press release")
