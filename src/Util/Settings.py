@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     # logger settings.
     log_path: str
     log_level: str
+
+    # summary report settings.
+    summary_report_path: str
+
+    # searching results settings.
+    searching_results_path: str
         
     # neon connection string.
     neon_connection_str: str

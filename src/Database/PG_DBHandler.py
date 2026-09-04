@@ -1,4 +1,7 @@
 import json
+import os
+import pandas as pd
+from datetime import datetime
 import psycopg2
 import psycopg2.extras
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -17,6 +20,9 @@ class PG_DBHandler:
         # neon database settings.
         self.conn_str = settings.neon_connection_str
         self.db_name = settings.pgdatabase
+
+        # search result export path settings.
+        self.searching_results_path = settings.searching_results_path
         
         # Create persistent connection with autocommit
         self.conn = psycopg2.connect(self.conn_str)
@@ -27,6 +33,13 @@ class PG_DBHandler:
         # ensure database and table was created.
         self._ensure_database_exists()
         self._create_table()
+
+        # Create search results folder if it doesn't exist
+        self._create_folder()
+            
+    # methods for report generation.
+    def _create_folder(self):
+        os.makedirs(self.searching_results_path, exist_ok=True)
 
     # check whether the database exists.
     def _ensure_database_exists(self) -> None:
@@ -201,3 +214,17 @@ class PG_DBHandler:
                 self.logger.info(f"Query Search Result No.: {i}/{len(search_results)} - /n%s", pformat(item, indent=4))
 
             return search_results
+
+    def export_to_excel(self, search_results: List[dict], parsed_query: ParsedQuery) -> None:  
+        # Convert list of dicts to DataFrame
+        df = pd.DataFrame(search_results)
+
+        # Generate filename based on query and timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"search_results_{timestamp}.xlsx"
+
+        # Save to Excel
+        df.to_excel(os.path.join(self.searching_results_path, filename), index=False)
+        self.logger.info(f"Exported search results to {filename}")
+
+        return

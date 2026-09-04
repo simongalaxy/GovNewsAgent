@@ -6,9 +6,9 @@ from typing import List
 class ParsedQuery(BaseModel):
     start_date: str = Field(description="The beginning date, ISO date format YYYY-MM-DD")
     end_date: str | None = Field(description="The ending date, ISO date format YYYY-MM-DD")
-    departments: List[str] | None = Field(description="Name of Department or Bureau")
-    keywords: List[str] | None = Field(description="keywords for searching")
-    action: List[str] | None = Field(description="action to do in the query")
+    departments: List[str] | None = Field(description="The exact name of the government department, agency, or organization mentioned")
+    keywords: List[str] | None = Field(description="A list of core topics, subjects, or phrases the user wants to search for")
+    actions: List[str] | None = Field(description="A list of specific operations or tasks requested by the user (e.g., 'scrape', 'summarize', 'download')")
 
 
 # class ExtractedData(BaseModel):
