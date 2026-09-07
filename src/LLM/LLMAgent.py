@@ -135,44 +135,84 @@ class LLMAgent:
         articles = self._format_articles(rows=search_results)
 
         # 3. Strong system + user prompt
-        system_prompt = """You are an expert government news analyst and report writer.
-        Your job is to synthesize multiple official news articles into a high-quality, comprehensive situational summary for senior officials.
+        # system_prompt = """You are an expert government news analyst and report writer.
+        # Your job is to synthesize multiple official news articles into a high-quality, comprehensive situational summary for senior officials.
 
-        Core rules:
-        - Be thorough and comprehensive — do not be overly concise.
-        - Always preserve strict chronological order (earliest to latest).
-        - Group related developments logically (by department, topic, or theme) while maintaining overall timeline.
-        - Highlight key decisions, policy changes, new initiatives, statements, and outcomes.
-        - Include important details, numbers, dates, and responsible agencies.
-        - Avoid repetition, speculation, and commentary. Stick to facts from the articles.
-        - Use clear, formal, neutral language suitable for government reporting."""
+        # Core rules:
+        # - Be thorough and comprehensive — do not be overly concise.
+        # - Always preserve strict chronological order (earliest to latest).
+        # - Group related developments logically (by department, topic, or theme) while maintaining overall timeline.
+        # - Highlight key decisions, policy changes, new initiatives, statements, and outcomes.
+        # - Include important details, numbers, dates, and responsible agencies.
+        # - Avoid repetition, speculation, and commentary. Stick to facts from the articles.
+        # - Use clear, formal, neutral language suitable for government reporting."""
 
-        user_prompt = f"""Below are the full texts of multiple government news articles related to the query.
+        system_prompt = """
+        You are an expert Media Analyst and Policy Researcher. Your task is to synthesize unstructured media coverage and news articles into a structured, highly organized media summary report.
 
-        Articles:
-        {articles}
+        You must strictly organize the output using the following hierarchical structure:
+        1. Department
+        2. Topic
 
-        Please create a comprehensive **Media Summary Report** with the following requirements:
+        For EACH individual topic, you must format the content in this exact order:
+        - **Background Paragraph(s)**: Provide the baseline context, foundational facts, and initial trigger for the topic.
+        - **Chronological History**: Present a timeline or sequence of events detailing how the topic evolved over time. Ensure dates or timeframes are explicitly noted.
+        - **Government Stand**: A concise summary of the official government position, policy statements, or actions regarding this topic.
+        - **Opposite Views**: A summary of criticism, public backlash, opposition party statements, or alternative viewpoints.
 
-        1. **Structure**:
-        - Start with a short executive overview (2-4 sentences).
-        - Then organize the main body in strict chronological order (earliest events first).
-        - Use clear markdown headings and sub-headings (## Date or ## Topic).
-        - Group related developments when logical, but never break chronology.
+        CRITICAL CONSTRAINTS:
+        - Do not mix the Government Stand and Opposite Views into the chronological history; they must remain at the very end of each topic section.
+        - Maintain a neutral, analytical tone.
+        - Do not add conversational fluff or introductory meta-commentary (e.g., "Sure, here is your summary"). Start directly with the first department.
+        """
 
-        2. **Content Guidelines**:
+        user_prompt = f"""
+        Please analyze the following raw media reports and generate a structured media summary according to your system instructions with the following requirements:
+
+        1. **Content Guidelines**:
         - Cover all significant points from the provided articles.
-        - Be detailed and comprehensive rather than brief.
-        - Include key facts, figures, dates, names of officials/agencies, and outcomes.
-        - Show progression and evolution of the issue over time.
-        - If multiple departments or topics are involved, create logical sections while keeping the overall timeline intact.
+        - Be detailed and comprehensive rather than brief; do not omit important information just to keep it short.
+        - Include key facts, figures, exact dates, names of officials/agencies, and outcomes.
+        - Show the progression and evolution of the issue over time within its specific section.
 
-        3. **Style**:
-        - Formal, objective, and professional tone.
-        - Clear paragraphs. Use bullet points only for lists of actions or key outcomes when appropriate.
-        - Do not omit important information just to keep it short.
+        2. **Structure & Style**:
+        - Group the summaries strictly by Department, then by Topic.
+        - For each Topic, organize the history chronologically (nested inside that topic).
+        - Ensure each Topic ends with distinct sections for the Government Stand and Opposite Views.
+        - Maintain a formal, objective, and professional tone.
+        - Use clear paragraphs. Use bullet points *only* for lists of actions or key chronological events when appropriate.
 
-        Write the complete report now."""
+        ### Articles:
+        {articles}
+        """
+
+
+        # user_prompt = f"""Below are the full texts of multiple government news articles related to the query.
+
+        # Articles:
+        # {articles}
+
+        # Please create a comprehensive **Media Summary Report** with the following requirements:
+
+        # 1. **Structure**:
+        # - Start with a short executive overview (2-4 sentences).
+        # - Then organize the main body in strict chronological order (earliest events first).
+        # - Use clear markdown headings and sub-headings (## Date or ## Topic).
+        # - Group related developments when logical, but never break chronology.
+
+        # 2. **Content Guidelines**:
+        # - Cover all significant points from the provided articles.
+        # - Be detailed and comprehensive rather than brief.
+        # - Include key facts, figures, dates, names of officials/agencies, and outcomes.
+        # - Show progression and evolution of the issue over time.
+        # - If multiple departments or topics are involved, create logical sections while keeping the overall timeline intact.
+
+        # 3. **Style**:
+        # - Formal, objective, and professional tone.
+        # - Clear paragraphs. Use bullet points only for lists of actions or key outcomes when appropriate.
+        # - Do not omit important information just to keep it short.
+
+        # Write the complete report now."""
 
         try:
             # ⚡️ FIX: Bypass instructor processing entirely for raw text extraction
