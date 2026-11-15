@@ -17,7 +17,8 @@ async def main():
     scraper = NewsScraper(logger=logger)
     agent = LLMAgent(logger=logger)
     dbhandler = PG_DBHandler(logger=logger)
-    
+
+    search_results = []
     # initialize query loop.
     while True:
         original_query = input("Enter the query to the Gov News or type 'q' for exit:")
@@ -47,6 +48,7 @@ async def main():
                 
         # Summarize the retrieved news articles.
         if "summarize" in parsed_query.actions:
+            search_results = dbhandler.query_full_text_search(parsed_query=parsed_query)
             if search_results:
                 logger.info(f"Main Pipeline: Retrieved {len(search_results)} items from DB for data extraction.")
                 # Generate summary in markdown format.
