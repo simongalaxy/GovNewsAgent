@@ -21,15 +21,25 @@ class LLMAgent:
         self.logger=logger
         
         # cloud ollama llm settings.
-        self.model_name = settings.ollama_cloud_model
-        self.base_url = settings.ollama_base_url
-        self.api_key = settings.ollama_api_key
-        self.client = instructor.from_openai(
-            AsyncOpenAI(
-                base_url=self.base_url,
-                api_key=self.api_key
-            ),
-            mode=instructor.Mode.JSON_SCHEMA,  # Forces JSON extraction compatible with Ollama
+        # self.model_name = settings.ollama_cloud_model
+        # self.base_url = settings.ollama_base_url
+        # self.api_key = settings.ollama_api_key
+        # self.cloud_client = instructor.from_openai(
+        #     AsyncOpenAI(
+        #         base_url=self.base_url,
+        #         api_key=self.api_key
+        #     ),
+        #     mode=instructor.Mode.JSON_SCHEMA,  # Forces JSON extraction compatible with Ollama
+        # )
+
+        # localhost ollama llm settings. 
+        self.model_name = settings.local_ollama_model
+        self.base_url = settings.local_ollama_url
+        self.client = instructor.from_provider(
+            f"ollama/{self.model_name}",
+            base_url = self.base_url,
+            mode=instructor.Mode.JSON,
+            async_client=True,
         )
 
         # local state variables to hold the original query, parsed query, extracted data, and summary.
@@ -81,7 +91,7 @@ class LLMAgent:
         """統一管理所有對 Ollama 的非同步請求與異常處理"""
         try:
             return await self.client.create(
-                model=model,
+                model=self.model_name,
                 messages=messages,
                 response_model=response_model,
                 **kwargs

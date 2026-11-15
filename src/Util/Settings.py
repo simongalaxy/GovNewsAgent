@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     ollama_base_url: str
     ollama_cloud_model: str
 
+    # ollama localhost settings.
+    local_ollama_model: str
+    local_ollama_url: str
+
     # pydantic settings config.
     model_config = SettingsConfigDict(
         env_file=".env", 
